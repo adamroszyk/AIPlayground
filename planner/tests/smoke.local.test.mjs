@@ -3,6 +3,8 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { startWorker } from "./helpers.mjs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 const TOKEN = "tok_Test-123.abc";
 const a = startWorker("apps/home", 8807, 9407, ["--var", `OPENAI_APPS_CHALLENGE:${TOKEN}`]);
@@ -41,4 +43,17 @@ test("smoke explains a Worker that never answers, instead of reporting a wall of
   assert.match(r.stderr, /still not answering after 3 s/);
   assert.match(r.stderr, /Domains & Routes/);
   assert.doesNotMatch(r.stdout, /^FAIL /m);
+});
+
+test("smoke reports exactly what differs when the live tool descriptions do not match this checkout", () => {
+  const snap = JSON.parse(readFileSync("apps/wedding/plugin/tools.snapshot.json", "utf8"));
+  snap[0].description = "An older description of this tool.";
+  const file = `${mkdtempSync(`${tmpdir()}/snap-`)}/snap.json`;
+  writeFileSync(file, JSON.stringify(snap));
+  const r = run(b.base, "wedding", `--snapshot=${file}`, "--wait=3");
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /waiting for the new version to roll out/);
+  assert.match(r.stdout, /FAIL live tool names.*description changed/s);
+  assert.match(r.stdout, /live    : "Use this when the user wants a wedding or reception seating chart/);
+  assert.match(r.stdout, /expected: "An older description/);
 });

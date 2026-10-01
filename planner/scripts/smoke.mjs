@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 // Post-deploy smoke test. Works against any base URL, including a local `wrangler dev`.
 //   node scripts/smoke.mjs <https://host> <home|wedding> [--challenge=<token>] [--waitlist]
 // Creates one plan through the real MCP tool, reads it back, and deletes it again.
@@ -60,15 +61,32 @@ const rpc = async (method, params = {}) => {
 };
 const init = await rpc("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "smoke", version: "1" } });
 ok(init.result?.serverInfo?.name === spec.server, `initialize -> ${init.result?.serverInfo?.name}`);
-const tools = (await rpc("tools/list")).result.tools;
+let tools = (await rpc("tools/list")).result.tools;
 ok(tools.length === 3, `tools/list -> ${tools.map((t) => t.name).join(", ")}`);
 {
-  // The deployed tool metadata must be exactly what this checkout has recorded (a redeploy that did not take, or a stale one, shows up here).
+  // The deployed tool metadata must be exactly what this checkout has recorded. A new version can take a little while to reach every
+  // location after a deploy, so keep looking for a while before calling it a mismatch, and show what differs if it never settles.
   const { compareTools } = await import("../packages/plugin-kit/src/index.ts");
   const { readFile } = await import("node:fs/promises");
-  const approved = JSON.parse(await readFile(new URL(`../apps/${app}/plugin/tools.snapshot.json`, import.meta.url), "utf8"));
-  const diff = compareTools(approved, tools);
-  ok(diff.breaking.length === 0 && diff.held.length === 0, `live tool names, schemas and descriptions match this checkout${diff.breaking.concat(diff.held).length ? `: ${diff.breaking.concat(diff.held).join("; ")}` : ""}`);
+  const snapPath = rest.find((a) => a.startsWith("--snapshot="))?.slice(11) ?? fileURLToPath(new URL(`../apps/${app}/plugin/tools.snapshot.json`, import.meta.url));
+  const approved = JSON.parse(await readFile(snapPath, "utf8"));
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const deadline = Date.now() + Math.min(waitSeconds, 90) * 1000;
+  let diff = compareTools(approved, tools);
+  while ((diff.breaking.length || diff.held.length) && Date.now() < deadline) {
+    console.log("live tool metadata differs from this checkout; waiting for the new version to roll out...");
+    await sleep(5000);
+    tools = (await rpc("tools/list")).result.tools;
+    diff = compareTools(approved, tools);
+  }
+  const problems = diff.breaking.concat(diff.held);
+  let detail = "";
+  if (problems.length) {
+    const t = approved.find((x) => tools.find((y) => y.name === x.name && y.description !== x.description));
+    const live = t && tools.find((y) => y.name === t.name);
+    detail = `: ${problems.join("; ")}${t ? `\n    ${t.name} live    : "${String(live.description).slice(0, 90)}..."\n    ${t.name} expected: "${String(t.description).slice(0, 90)}..."` : ""}`;
+  }
+  ok(problems.length === 0, `live tool names, schemas and descriptions match this checkout${detail}`);
 }
 
 // 4. every review case, end to end; remember any plan it saved so it can be deleted
