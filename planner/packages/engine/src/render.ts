@@ -49,7 +49,9 @@ export function layoutToSvg(room: Room, pieces: Piece[], placements: Placement[]
     out.push(`<rect class="rp-front" x="${fx ? mx - bar / 2 : mx - Math.min(w, 24) / 2}" y="${fy ? my - bar / 2 : my - Math.min(h, 24) / 2}" width="${fx ? bar : Math.min(w, 24)}" height="${fy ? bar : Math.min(h, 24)}"/>`);
     if (o.showLabels !== false && Math.min(w, h) > 14) {
       const vertical = h > w * 1.4;
-      out.push(`<text x="${x + w / 2}" y="${y + h / 2 + 4}" text-anchor="middle"${vertical ? ` transform="rotate(-90 ${x + w / 2} ${y + h / 2})"` : ""}>${esc(p.name)}</text>`);
+      const maxChars = Math.max(3, Math.floor((vertical ? h : w) / 6.4));
+      const label = p.name.length > maxChars ? `${p.name.slice(0, maxChars - 1)}…` : p.name;
+      out.push(`<text x="${x + w / 2}" y="${y + h / 2 + 4}" text-anchor="middle"${vertical ? ` transform="rotate(-90 ${x + w / 2} ${y + h / 2})"` : ""}><title>${esc(p.name)}</title>${esc(label)}</text>`);
     }
     out.push(`</g>`);
   }
@@ -81,4 +83,83 @@ export const PLAN_CSS = `.rp-plan{width:100%;height:auto;font:12px system-ui,san
 .rp-front{fill:var(--rp-item-line,#7d9490)}
 .rp-piece text{fill:var(--rp-text,#2a3a3b);font-size:11px;pointer-events:none}
 .rp-dim{fill:var(--rp-muted,#5a6868);font-size:13px}
+.rp-badge{fill:#2c7f52}.rp-badge-bad{fill:#b4412f}.rp-badge-t{fill:#fff;font-weight:700;font-size:14px}`;
+
+// ---------------------------------------------------------------------------------------------
+// Seating chart renderer
+// ---------------------------------------------------------------------------------------------
+import type { Guest, SeatingReport, Table } from "./seating.ts";
+
+export interface SeatingRenderOptions {
+  report?: SeatingReport;
+  /** Guest ids to draw in the "problem" colour. */
+  highlight?: string[];
+  columns?: number;
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? parts[parts.length - 1]![0]! : parts[0]?.[1] ?? "")).toUpperCase();
+}
+
+/** Group labels in the order and with the colour classes `seatingToSvg` uses, for drawing a key. */
+export function seatingGroups(guests: Guest[]): { group: string; cls: string }[] {
+  const groups = [...new Set(guests.map((g) => g.group ?? ""))].filter((g) => g !== "");
+  const all = [...new Set(guests.map((g) => g.group ?? ""))];
+  return groups.map((group) => ({ group, cls: `rp-g${(all.indexOf(group) % 5) + 1}` }));
+}
+
+/** Round tables with colour-coded seats. Every string is escaped. `seats` lists guest ids per table in seat order. */
+export function seatingToSvg(tables: Table[], guests: Guest[], seats: Record<string, string[]>, o: SeatingRenderOptions = {}): string {
+  const byId = new Map(guests.map((g) => [g.id, g]));
+  const all = [...new Set(guests.map((g) => g.group ?? ""))];
+  const cls = (g: Guest) => `rp-g${(all.indexOf(g.group ?? "") % 5) + 1}`;
+  const heads = tables.filter((t) => t.head), regular = tables.filter((t) => !t.head);
+  const maxCap = Math.max(...regular.map((t) => t.capacity), 6);
+  const ring = Math.max(52, maxCap * 6.4), cell = ring * 2 + 40;
+  const cols = o.columns ?? Math.min(4, Math.max(1, Math.ceil(Math.sqrt(regular.length))));
+  const rows = Math.ceil(regular.length / cols);
+  const headW = (t: Table) => Math.max(100, t.capacity * 30);
+  const HEAD_ROW = 110;
+  const W = Math.max(cols * cell, ...heads.map((t) => headW(t) + 40));
+  const headBlock = heads.length * HEAD_ROW;
+  const H = headBlock + rows * cell + (o.report ? 50 : 0);
+  const seat = (g: Guest | undefined, x: number, y: number) =>
+    g
+      ? `<g><title>${esc(g.name)}</title><circle class="rp-seat ${cls(g)}${o.highlight?.includes(g.id) ? " rp-bad-seat" : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12"/><text class="rp-init" x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle">${esc(initials(g.name))}</text></g>`
+      : `<circle class="rp-seat rp-empty" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12"/>`;
+  const out: string[] = [];
+  heads.forEach((t, i) => {
+    const cx = W / 2, cy = 26 + i * HEAD_ROW, w = headW(t), ids = seats[t.id] ?? [];
+    out.push(`<g class="rp-table rp-head"><rect class="rp-tbl" x="${cx - w / 2}" y="${cy - 16}" width="${w}" height="32" rx="8"/>`);
+    for (let k = 0; k < t.capacity; k++) out.push(seat(byId.get(ids[k] ?? ""), cx - w / 2 + (w / t.capacity) * (k + 0.5), cy + 32));
+    out.push(`<text class="rp-tname" x="${cx}" y="${cy + 4}" text-anchor="middle">${esc(t.name ?? "Head table")}</text></g>`);
+  });
+  const gridX0 = (W - cols * cell) / 2;
+  regular.forEach((t, i) => {
+    const cx = gridX0 + (i % cols) * cell + cell / 2, cy = headBlock + Math.floor(i / cols) * cell + cell / 2;
+    const ids = seats[t.id] ?? [];
+    out.push(`<g class="rp-table"><circle class="rp-tbl" cx="${cx}" cy="${cy}" r="${ring * 0.62}"/>`);
+    for (let k = 0; k < t.capacity; k++) {
+      const a = (k / t.capacity) * Math.PI * 2 - Math.PI / 2;
+      out.push(seat(byId.get(ids[k] ?? ""), cx + Math.cos(a) * ring * 0.95, cy + Math.sin(a) * ring * 0.95));
+    }
+    out.push(`<text class="rp-tname" x="${cx}" y="${cy - 2}" text-anchor="middle">${esc(t.name ?? t.id)}</text><text class="rp-tcount" x="${cx}" y="${cy + 14}" text-anchor="middle">${ids.length}/${t.capacity}</text></g>`);
+  });
+  if (o.report) {
+    const label = `${o.report.passed} of ${o.report.total} rules met`;
+    out.push(`<rect class="rp-badge${o.report.ok ? "" : " rp-badge-bad"}" x="${W / 2 - 110}" y="${H - 40}" width="220" height="30" rx="15"/><text class="rp-badge-t" x="${W / 2}" y="${H - 20}" text-anchor="middle">${esc(label)}</text>`);
+  }
+  return `<svg class="rp-seating" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`Seating chart with ${tables.length} tables and ${guests.length} guests`)}">${out.join("")}</svg>`;
+}
+
+export const SEATING_CSS = `.rp-seating{width:100%;height:auto;font:12px system-ui,sans-serif}
+.rp-tbl{fill:var(--rp-item,#efe3e1);stroke:var(--rp-item-line,#b79aa6);stroke-width:1.5}
+.rp-seat{stroke:var(--rp-bg,#fff);stroke-width:1.5}.rp-empty{fill:none;stroke:var(--rp-item-line,#b79aa6);stroke-dasharray:3 3}
+.rp-g1{fill:var(--rp-g1,#7b2d5b)}.rp-g2{fill:var(--rp-g2,#d98aa6)}.rp-g3{fill:var(--rp-g3,#3f8f8a)}.rp-g4{fill:var(--rp-g4,#c99a3e)}.rp-g5{fill:var(--rp-g5,#6b7fb3)}
+.rp-bad-seat{stroke:#b4412f;stroke-width:3}
+.rp-legend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12px;color:var(--rp-muted,#675b6c);margin:6px 0}.rp-legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.rp-legend .rp-g1{background:var(--rp-g1,#7b2d5b)}.rp-legend .rp-g2{background:var(--rp-g2,#d98aa6)}.rp-legend .rp-g3{background:var(--rp-g3,#3f8f8a)}.rp-legend .rp-g4{background:var(--rp-g4,#c99a3e)}.rp-legend .rp-g5{background:var(--rp-g5,#6b7fb3)}
+.rp-init{fill:#fff;font-size:10px;font-weight:700;pointer-events:none}
+.rp-tname{fill:var(--rp-text,#2a2230);font-weight:600;font-size:13px}.rp-tcount{fill:var(--rp-muted,#675b6c);font-size:12px}
 .rp-badge{fill:#2c7f52}.rp-badge-bad{fill:#b4412f}.rp-badge-t{fill:#fff;font-weight:700;font-size:14px}`;

@@ -5,8 +5,10 @@
   "assets": {
     "directory": "./dist/site",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/.well-known/*", "/mcp"],
+    "run_worker_first": ["/api/*", "/.well-known/*", "/mcp", "/p/*"],
     "not_found_handling": "404-page"
   },
-  "kv_namespaces": [{ "binding": "WAITLIST" }]
+  "kv_namespaces": [{ "binding": "WAITLIST" }],
+  "d1_databases": [{ "binding": "DB", "database_name": "aisle", "migrations_dir": "migrations" }],
+  "triggers": { "crons": ["17 3 * * *"] }
 }

@@ -4,8 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:widget": "node build-widget.ts",
     "build:site": "node site/build.ts",
-    "dev": "npm run build:site && wrangler dev --local --port 8788 --inspector-port 9330"
+    "build": "npm run build:widget && npm run build:site",
+    "dev": "npm run build && wrangler dev --local --port 8788 --inspector-port 9330"
   },
-  "dependencies": { "@planner/core": "*" }
+  "dependencies": {
+    "@planner/core": "*",
+    "@planner/engine": "*",
+    "@modelcontextprotocol/server": "*",
+    "@modelcontextprotocol/ext-apps": "*",
+    "zod": "*"
+  }
 }
