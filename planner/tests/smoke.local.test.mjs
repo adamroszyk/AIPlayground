@@ -30,6 +30,8 @@ test("smoke accepts a configured token when none is passed (secrets survive rede
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /serves a token as text\/plain/);
   assert.match(r.stdout, /live tool names, schemas and descriptions match this checkout/);
+  assert.match(r.stdout, /PASS GET \/demo\/ -> 200/);
+  assert.match(r.stdout, /PASS demo video \/demo\/roomwise-demo\.mp4 -> 200 video\/mp4/);
 });
 test("smoke fails loudly when the expected token is wrong", () => {
   const r = run(a.base, "home", "--challenge=not-the-token");

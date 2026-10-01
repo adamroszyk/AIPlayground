@@ -40,6 +40,17 @@ const home = await get("/");
 ok(/content-security-policy/i.test([...home.headers.keys()].join(",")) && /frame-ancestors|default-src/.test(home.headers.get("content-security-policy") ?? ""), "landing page sends a Content-Security-Policy");
 ok((await (await get("/privacy/")).text()).toLowerCase().includes(spec.server), "privacy page names the product");
 ok((await get("/nope-" + Date.now())).status === 404, "unknown path is 404");
+{
+  // The demo walkthrough page and its video are part of the review material, so a deploy without them is a failed deploy.
+  const demo = await get("/demo/");
+  const html = demo.status === 200 ? await demo.text() : "";
+  const src = /src="(\/demo\/[\w-]+\.mp4)"/.exec(html)?.[1];
+  ok(demo.status === 200 && !!src, `GET /demo/ -> ${demo.status}${src ? "" : " (no video on the page)"}`);
+  if (src) {
+    const vid = await get(src, { method: "HEAD" });
+    ok(vid.status === 200 && /^video\/mp4/.test(vid.headers.get("content-type") ?? ""), `demo video ${src} -> ${vid.status} ${vid.headers.get("content-type")}`);
+  }
+}
 
 // 2. domain verification
 const ch = await get("/.well-known/openai-apps-challenge");
