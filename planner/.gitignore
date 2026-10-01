@@ -2,3 +2,4 @@ node_modules/
 dist/
 .wrangler/
 tests/.shots/
+apps/*/src/widget.generated.ts
