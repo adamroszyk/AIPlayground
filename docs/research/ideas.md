@@ -111,6 +111,8 @@ That is a judgement from the table above, not measured data — if Keyword Plann
 
 ## Update: volume and directory-competition check on the five picks
 
+> Superseded in part by [`round2-ratings.md`](round2-ratings.md), which corrects the 'open field' claim below and rates 17 more ideas.
+
 Run on 2026-10-01 with web search only. **Low-confidence evidence**; absence from a snippet does not prove absence from a directory.
 
 | Pick | Volume figure found (US, monthly) | Already in the ChatGPT directory? |
@@ -129,7 +131,7 @@ Sources: [tool-aggregator listing](https://toolspotai.com/) · [awesome-chatgpt-
 **What this changes:**
 
 - QR and word counter are **already occupied in the ChatGPT directory**. Our QR tool has no tracking/branding/vCard features, so it is the weakest differentiated pick *there*. It is still fine as a web SEO page and as a cheap, working vertical slice.
-- Password, age/date and mortgage/loan looked **open** in what I could see. If we only have time to polish and submit three, make it these.
+- Password, age/date and mortgage/loan looked open in the *official ChatGPT directory* snippets only. **Superseded:** a wider MCP-registry check (see `round2-ratings.md`) found several community MCP servers for each, so features are not a moat.
 - Cheapest way to differentiate QR/word counter: ship the extra types users expect (Wi-Fi, vCard, email, calendar event for QR; reading level for words) before submitting them to a directory.
 - Re-check each directory the day before submitting. Both the volumes and the competition move quickly.
 
