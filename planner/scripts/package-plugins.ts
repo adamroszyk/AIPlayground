@@ -3,13 +3,15 @@
 //   PUBLISHER_NAME, CONTACT_EMAIL, ROOMWISE_URL, AISLE_URL, DEMO_URL_ROOMWISE, DEMO_URL_AISLE (see docs/plan/go-live.md)
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { buildPluginFiles, lintPlugin, readZip, writeZip, type PluginSpec } from "@planner/plugin-kit";
+// @ts-ignore plain JS helper
+import { resolveSiteUrl } from "./lib/cf.mjs";
 
 const release = process.argv.includes("--release");
 const publisher = process.env.PUBLISHER_NAME ?? "[Publisher name]";
 const email = process.env.CONTACT_EMAIL ?? "";
 const products = [
-  { dir: "home", url: process.env.ROOMWISE_URL ?? "https://roomwise.example.com", demo: process.env.DEMO_URL_ROOMWISE },
-  { dir: "wedding", url: process.env.AISLE_URL ?? "https://aisle.example.com", demo: process.env.DEMO_URL_AISLE },
+  { dir: "home", url: (await resolveSiteUrl({ envName: "ROOMWISE_URL", workerName: "roomwise" })) ?? "https://roomwise.example.com", demo: process.env.DEMO_URL_ROOMWISE },
+  { dir: "wedding", url: (await resolveSiteUrl({ envName: "AISLE_URL", workerName: "aisle" })) ?? "https://aisle.example.com", demo: process.env.DEMO_URL_AISLE },
 ];
 const out = new URL("../dist/plugins/", import.meta.url).pathname;
 await rm(out, { recursive: true, force: true });

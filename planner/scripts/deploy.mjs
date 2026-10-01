@@ -8,6 +8,7 @@
 import { spawnSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import { COST_MODEL, limitsFromEnv } from "../packages/core/src/usage.ts";
+import { resolveSiteUrl } from "./lib/cf.mjs";
 
 const [app, ...flags] = process.argv.slice(2);
 const dry = flags.includes("--dry-run"), skipSmoke = flags.includes("--skip-smoke");
@@ -15,9 +16,12 @@ const P = { home: { url: "ROOMWISE_URL", token: "OPENAI_APPS_CHALLENGE_ROOMWISE"
 if (!P) { console.error("usage: node scripts/deploy.mjs <home|wedding> [--dry-run] [--skip-smoke]"); process.exit(2); }
 
 const problems = [];
-const siteUrl = (process.env[P.url] ?? "").replace(/\/$/, "");
+const WORKER_NAME = { home: "roomwise", wedding: "aisle" }[app];
+let siteUrl = "";
+try { siteUrl = (await resolveSiteUrl({ envName: P.url, workerName: WORKER_NAME })) ?? ""; } catch (e) { console.error(e.message); process.exit(1); }
+if (siteUrl && !process.env[P.url]) console.log(`Using ${siteUrl} (found from your Cloudflare account; set ${P.url} to override)`);
 let host = "";
-try { const u = new URL(siteUrl); host = u.hostname; if (u.protocol !== "https:" || u.pathname !== "/" || u.search) problems.push(`${P.url} must be a bare https origin such as https://${host}`); if (/example\.(com|org|net)$/.test(host)) problems.push(`${P.url} still uses a placeholder host`); } catch { problems.push(`${P.url} is not set (an https origin such as https://planner.yourdomain.com)`); }
+try { const u = new URL(siteUrl); host = u.hostname; if (u.protocol !== "https:" || u.pathname !== "/" || u.search) problems.push(`${P.url} must be a bare https origin such as https://${host}`); if (/example\.(com|org|net)$/.test(host)) problems.push(`${P.url} still uses a placeholder host`); } catch { problems.push(`${P.url} is not set and no Cloudflare credentials were found to look it up (set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID, or ${P.url}=https://<host>)`); }
 if (!process.env.PUBLISHER_NAME) problems.push("PUBLISHER_NAME is not set; the legal pages would say [Publisher name]");
 if (!process.env.CONTACT_EMAIL) problems.push("CONTACT_EMAIL is not set; the support and privacy pages need a real address");
 if (!dry && !process.env.CLOUDFLARE_API_TOKEN) problems.push("CLOUDFLARE_API_TOKEN is not set");
