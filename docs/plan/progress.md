@@ -45,3 +45,11 @@ Next: P4 plugin packages, linter and review test cases.
 - Tests: usage guard unit tests (14 in core), and an end-to-end test on workerd that proves exactly N requests are served then 429, with the challenge route, preflights and static pages unaffected.
 - Alerts are dashboard-only and need you: budget alerts at $0.50 and $2.00 to szyk.adam@gmail.com (`go-live.md` step 3b).
 - Test workers now share one startup helper (migrations plus high limits), so the landing test no longer starts its own.
+
+## 2026-10-01: first real checkout found three bugs my machine hid
+
+A fresh clone on macOS (with a space in the folder path) failed. Causes, all fixed and now covered by running the whole suite in a fresh clone under a path with a space:
+- The repo-root `.gitignore` (a Python template) ignores any folder named `lib/`, so `scripts/lib/` was never pushed. Renamed to `scripts/cloudflare/`.
+- Scripts turned file URLs into paths with `URL.pathname`, which leaves spaces as `%20`. Now `fileURLToPath`.
+- `test:all` ran the typecheck before the build that creates the git-ignored widget files, so it failed on any new checkout (and would have failed in CI).
+Also: `npm run deploy` is now a single interactive command (hidden token input, format validation, works in bash and zsh), tested through a pseudo-terminal.

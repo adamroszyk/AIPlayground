@@ -49,16 +49,16 @@ Cloudflare cannot hard-cap spending. The Workers enforce daily caps themselves (
 Used on the privacy, terms and support pages and in `author.email`. Do not use a personal inbox you are not willing to publish.
 
 ### 5. First deploy
-Either run locally or use the manual GitHub workflow `planner` (repository secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, optional `OPENAI_APPS_CHALLENGE_*`; repository variables `PUBLISHER_NAME`, `CONTACT_EMAIL`, `ROOMWISE_URL`, `AISLE_URL`; an `production` environment).
+One command (bash, zsh or WSL). It asks for the API token (hidden), the account ID, your publisher name and a contact email, rejects placeholders and malformed values, deploys both products, smoke-tests them, and builds the plugin ZIPs:
 
 ```sh
-cd planner
+git clone -b claude/beautiful-ride-28tutl https://github.com/adamroszyk/aiplayground.git aiplayground-deploy
+cd aiplayground-deploy/planner
 npm ci
-export CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=...
-export PUBLISHER_NAME="..." CONTACT_EMAIL="..." ROOMWISE_URL=https://roomwise.<domain> AISLE_URL=https://aisle.<domain>
-node scripts/deploy.mjs home          # builds, deploys, applies D1 migrations, smoke-tests
-node scripts/deploy.mjs wedding
+npm run deploy          # add -- --dry-run first if you want a rehearsal that uploads nothing
 ```
+
+Or use the manual GitHub workflow `planner` (repository secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, optional `OPENAI_APPS_CHALLENGE_*`; repository variables `PUBLISHER_NAME`, `CONTACT_EMAIL`; a `production` environment). Per product: `node scripts/deploy.mjs home|wedding`.
 
 ### 6. Domain verification
 In the OpenAI dashboard start verification for each hostname; it shows a token. Then:
