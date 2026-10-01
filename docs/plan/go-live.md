@@ -49,6 +49,8 @@ Cloudflare cannot hard-cap spending. The Workers enforce daily caps themselves (
 Used on the privacy, terms and support pages and in `author.email`. Do not use a personal inbox you are not willing to publish.
 
 ### 5. First deploy
+Your credentials can be saved once with `npm run credentials` (token in the macOS Keychain or Linux keyring, else a private file outside the repo; check with `-- --show`, remove with `-- --forget`). `npm run deploy` then uses them and offers to save them if you type them in.
+
 One command (bash, zsh or WSL). It asks for the API token (hidden), the account ID, your publisher name and a contact email, rejects placeholders and malformed values, deploys both products, smoke-tests them, and builds the plugin ZIPs:
 
 ```sh
@@ -61,15 +63,15 @@ npm run deploy          # add -- --dry-run first if you want a rehearsal that up
 Or use the manual GitHub workflow `planner` (repository secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, optional `OPENAI_APPS_CHALLENGE_*`; repository variables `PUBLISHER_NAME`, `CONTACT_EMAIL`; a `production` environment). Per product: `node scripts/deploy.mjs home|wedding`.
 
 ### 6. Domain verification
-In the OpenAI dashboard start verification for each hostname; it shows a token. Then:
+In the OpenAI Plugins page, start verification for the plugin's hostname; it shows a token. Then, from `planner/`:
 
 ```sh
-export OPENAI_APPS_CHALLENGE_ROOMWISE=<token> OPENAI_APPS_CHALLENGE_AISLE=<token>
-node scripts/deploy.mjs home && node scripts/deploy.mjs wedding   # sets the secret; smoke test checks the route returns exactly the token
+npm run set-challenge -- home      # or: wedding
 ```
+It asks for the token (hidden), stores it as the Worker secret `OPENAI_APPS_CHALLENGE`, and checks that `/.well-known/openai-apps-challenge` returns exactly that token. Then click Verify on the OpenAI page.
 
 ### 7. Test in ChatGPT developer mode before submitting
-Add each MCP URL as a connector in developer mode and run all 8 prompts per plugin from `apps/*/plugin/spec.ts`. Watch for: the widget rendering, the edit link opening the editor, the model choosing the expected tool, the negative prompts being declined. Tell me what you see and I will fix it.
+Add each MCP URL (`https://roomwise.<subdomain>.workers.dev/mcp`, `https://aisle.<subdomain>.workers.dev/mcp`) as a connector in developer mode, with no authentication, and run the prompts. `npm run prompts` prints them with the tool each should call and what to look for. Watch for: the widget rendering, the edit link opening the editor, the model choosing the expected tool, the negative prompts being declined. Each product allows 50 solver calls a day, and the deploy smoke test already used 2 to 3 of them. Tell me what you see and I will fix it.
 
 ### 8. Demo video
 `npm run demo:video` records a captioned walkthrough of each product (real MCP call, real widget in an MCP Apps host, real web editor) into `planner/dist/demo/`. It is not footage from inside ChatGPT. Record the ChatGPT part yourself using `docs/plan/demo-script.md` and add it, since reviewers need to see the plugin used in ChatGPT. Host the result where reviewers can open it without signing in. Set `DEMO_URL_ROOMWISE` and `DEMO_URL_AISLE`.

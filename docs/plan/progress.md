@@ -53,3 +53,8 @@ A fresh clone on macOS (with a space in the folder path) failed. Causes, all fix
 - Scripts turned file URLs into paths with `URL.pathname`, which leaves spaces as `%20`. Now `fileURLToPath`.
 - `test:all` ran the typecheck before the build that creates the git-ignored widget files, so it failed on any new checkout (and would have failed in CI).
 Also: `npm run deploy` is now a single interactive command (hidden token input, format validation, works in bash and zsh), tested through a pseudo-terminal.
+
+## 2026-10-01: first live deploy
+
+Both products deployed to Cloudflare Workers (workers.dev, Workers Paid) with D1 and KV provisioned, migrations applied and the post-deploy smoke test passing (28 checks each, including all review cases against the live servers). A brand-new workers.dev address needed up to about 16 seconds before it answered, so the smoke test now waits. Plugin ZIPs built.
+Added: `npm run credentials` (token in the OS keychain, account id in a private config file), `npm run set-challenge`, `npm run prompts`, token permission preflight, secret scanner and commit hook. The macOS Keychain path is covered by tests that mock the `security` command, not by a run on a Mac.
