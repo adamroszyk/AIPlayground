@@ -42,8 +42,10 @@ ok((await get("/nope-" + Date.now())).status === 404, "unknown path is 404");
 
 // 2. domain verification
 const ch = await get("/.well-known/openai-apps-challenge");
-if (challenge) ok(ch.status === 200 && (await ch.text()) === challenge && /^text\/plain/.test(ch.headers.get("content-type") ?? ""), "challenge route returns exactly the token as text/plain");
-else ok(ch.status === 404, "challenge route is 404 until a token is configured (pass --challenge=TOKEN to verify it)");
+const chBody = ch.status === 200 ? await ch.text() : "";
+if (challenge) ok(ch.status === 200 && chBody === challenge && /^text\/plain/.test(ch.headers.get("content-type") ?? ""), "challenge route returns exactly the token as text/plain");
+else if (ch.status === 404) ok(true, "challenge route is 404: no verification token is configured yet (pass --challenge=TOKEN to verify one)");
+else ok(ch.status === 200 && chBody.length >= 8 && /^text\/plain/.test(ch.headers.get("content-type") ?? ""), "challenge route serves a token as text/plain (a verification token is configured; pass --challenge=TOKEN to check its value)");
 
 // 3. MCP
 const opt = await get("/mcp", { method: "OPTIONS" });
@@ -60,6 +62,14 @@ const init = await rpc("initialize", { protocolVersion: "2025-06-18", capabiliti
 ok(init.result?.serverInfo?.name === spec.server, `initialize -> ${init.result?.serverInfo?.name}`);
 const tools = (await rpc("tools/list")).result.tools;
 ok(tools.length === 3, `tools/list -> ${tools.map((t) => t.name).join(", ")}`);
+{
+  // The deployed tool metadata must be exactly what this checkout has recorded (a redeploy that did not take, or a stale one, shows up here).
+  const { compareTools } = await import("../packages/plugin-kit/src/index.ts");
+  const { readFile } = await import("node:fs/promises");
+  const approved = JSON.parse(await readFile(new URL(`../apps/${app}/plugin/tools.snapshot.json`, import.meta.url), "utf8"));
+  const diff = compareTools(approved, tools);
+  ok(diff.breaking.length === 0 && diff.held.length === 0, `live tool names, schemas and descriptions match this checkout${diff.breaking.concat(diff.held).length ? `: ${diff.breaking.concat(diff.held).join("; ")}` : ""}`);
+}
 
 // 4. every review case, end to end; remember any plan it saved so it can be deleted
 const created = [];

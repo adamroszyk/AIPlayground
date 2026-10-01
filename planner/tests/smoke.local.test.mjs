@@ -23,6 +23,12 @@ test("smoke passes on aisle with no challenge configured", () => {
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /404 until a token is configured/);
 });
+test("smoke accepts a configured token when none is passed (secrets survive redeploys), and still checks the value when one is", () => {
+  const r = run(a.base, "home");
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /serves a token as text\/plain/);
+  assert.match(r.stdout, /live tool names, schemas and descriptions match this checkout/);
+});
 test("smoke fails loudly when the expected token is wrong", () => {
   const r = run(a.base, "home", "--challenge=not-the-token");
   assert.notEqual(r.status, 0);
