@@ -8,3 +8,11 @@
 - Pending your input: publisher name, contact email, domains (see plan section 7). Pages show placeholders until `PUBLISHER_NAME`, `CONTACT_EMAIL`, `SITE_URL` are set.
 
 Next: P2 engine.
+
+## 2026-10-01: P2 engine (in progress)
+
+- `planner/packages/engine`: seating solver + independent verifier, layout solver + independent verifier (walkway widths measured with a widest-path search over a 2 in grid), materials estimator, SVG renderer. 18 tests pass, including property tests.
+  - Seating: 150 random problems with a guaranteed hidden solution are all solved and verified; corrupting a solved chart is always detected; 250 guests / 30 tables solves in well under 1.5 s; infeasible rules are named, with the minimal set to relax.
+  - Layout: walkway measurement checked against a known 40 in gap (within 4 in); hand-calculated materials match; 38 of 40 random rooms solved, the 2 unsolved report the exact failing rule (front clearance of a desk or storage unit).
+- Found and fixed along the way: side tables were placed in front of sofas, not beside them; chairs sat diagonally to the coffee table.
+- Remaining for P2: web editor v0.
