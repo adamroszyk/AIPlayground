@@ -1,4 +1,4 @@
-import type { Guest, Rule, SeatingReport, Table, Timeline } from "@planner/engine";
+import type { Guest, Rule, SeatingReport, Table, Timeline, TimelineInput } from "@planner/engine";
 
 export interface GuestInput { name: string; group?: string; party?: string }
 export interface TableInput { name?: string; seats: number; count?: number; head?: boolean }
@@ -21,6 +21,8 @@ export interface SeatingPlan {
   conflicts: string[];
   relaxedRules: string[];
   timeline?: Timeline;
+  /** What the web editor needs to reopen the timeline form. */
+  timelineInput?: TimelineInput;
 }
 
 const err = (m: string): never => { throw new RangeError(m); };

@@ -61,6 +61,7 @@ export const wedding: ProductConfig = {
     planRetentionDays: 90,
     thirdPartyNote: "Guest names you type into ChatGPT are processed by OpenAI under its own policy.",
   },
+  appPath: "/app/",
   disclaimer:
     "Seating charts and timelines are suggestions generated from the guests and rules you provide. Check them before you print or share them. We are not responsible for vendor, venue or guest outcomes.",
 };

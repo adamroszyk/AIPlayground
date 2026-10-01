@@ -87,7 +87,7 @@ export const num = (v: string, fallback: number) => {
 
 export const EDITOR_CSS = `
 .editor{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:28px;padding:28px 0 60px;align-items:start}
-@media(max-width:900px){.editor{grid-template-columns:1fr}}
+@media(max-width:900px){.editor{grid-template-columns:1fr}#main{order:-1}}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
 .panel h2{font-size:18px;margin:0 0 10px}.panel h3{font-size:15px;margin:14px 0 6px}
 .field{margin:0 0 10px}.field label{display:block;font-size:13px;font-weight:600;margin-bottom:3px}.field small{color:var(--muted);font-size:12px}
@@ -111,4 +111,14 @@ export const EDITOR_CSS = `
 .editor{--rp-floor:var(--floor);--rp-wall:var(--fg);--rp-text:var(--fg);--rp-muted:var(--muted);--rp-item:var(--item);--rp-item-big:var(--item2);--rp-item-line:var(--item-line);--rp-accent:var(--accent2);--rp-bg:var(--bg);--rp-g1:var(--g1,#7b2d5b);--rp-g2:var(--g2,#d98aa6);--rp-g3:var(--g3,#3f8f8a);--rp-g4:var(--g4,#c99a3e);--rp-g5:var(--g5,#6b7fb3)}
 .dragging{opacity:.85}.drop{stroke:var(--accent)!important;stroke-width:3!important}
 @media print{header.top,footer,.panel,.toolbar,.banner{display:none!important}.editor{display:block}.canvas{border:0}}
+`;
+
+export const WEDDING_EDITOR_CSS = `
+.rulehelp{margin:0;padding-left:18px}
+.rp-legend span{display:inline-flex;align-items:center}
+.canvas .rp-seatg .rp-seat{cursor:grab}.canvas .rp-seatg.rp-sel .rp-seat{stroke:var(--accent);stroke-width:3}
+.canvas .rp-seatg.dragging{pointer-events:none;opacity:.8}
+.conflict{border-color:var(--err)}.conflict ul,.warn{margin:6px 0 0;padding-left:18px;font-size:14px}.warn{color:var(--err)}
+.tl{border-collapse:collapse;width:100%;font-size:14px}.tl td{padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}.tl td:first-child{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+@media print{.rp-legend{display:flex}}
 `;
