@@ -1,0 +1,11 @@
+{
+  "name": "@planner/home",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:site": "node site/build.ts",
+    "dev": "npm run build:site && wrangler dev --local --port 8787"
+  },
+  "dependencies": { "@planner/core": "*" }
+}

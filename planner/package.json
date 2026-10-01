@@ -1,0 +1,31 @@
+{
+  "name": "planner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Two ChatGPT-ready planners: home room layout and wedding seating, built on one shared engine.",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "esbuild": "^0.28.2",
+    "playwright": "^1.63.0",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.145.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^2.0.3",
+    "@modelcontextprotocol/server": "^2.2.0",
+    "zod": "^4.6.5"
+  },
+  "scripts": {
+    "build:sites": "npm run build:site -w @planner/home && npm run build:site -w @planner/wedding",
+    "test:landing": "npm run build:sites && node tests/landing.e2e.mjs",
+    "typecheck": "tsc --noEmit"
+  }
+}
