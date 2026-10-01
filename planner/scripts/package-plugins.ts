@@ -11,12 +11,13 @@ import { buildPluginFiles, lintPlugin, readZip, writeZip, type PluginSpec } from
 // @ts-ignore plain JS helper
 import { resolveSiteUrl } from "./cloudflare/cf.mjs";
 // @ts-ignore plain JS helper
-import { envWithSavedCredentials, loadProfile } from "./cloudflare/credentials.mjs";
+import { envWithSavedCredentials, loadDemoUrls, loadProfile } from "./cloudflare/credentials.mjs";
 
 const release = process.argv.includes("--release");
 const allowPlaceholders = process.argv.includes("--allow-placeholders");
 const env = envWithSavedCredentials();
 const profile = loadProfile();
+const demoUrls = loadDemoUrls() as Record<string, string | undefined>;
 const publisher = process.env.PUBLISHER_NAME ?? profile?.publisher ?? "[Publisher name]";
 const email = process.env.CONTACT_EMAIL ?? profile?.email ?? "";
 if ((publisher === "[Publisher name]" || !email) && !allowPlaceholders) {
@@ -31,8 +32,8 @@ const lookup = async (envName: string, workerName: string) => {
   process.exit(1);
 };
 const products = [
-  { dir: "home", url: await lookup("ROOMWISE_URL", "roomwise"), demo: process.env.DEMO_URL_ROOMWISE, category: process.env.PLUGIN_CATEGORY_ROOMWISE ?? process.env.PLUGIN_CATEGORY },
-  { dir: "wedding", url: await lookup("AISLE_URL", "aisle"), demo: process.env.DEMO_URL_AISLE, category: process.env.PLUGIN_CATEGORY_AISLE ?? process.env.PLUGIN_CATEGORY },
+  { dir: "home", url: await lookup("ROOMWISE_URL", "roomwise"), demo: process.env.DEMO_URL_ROOMWISE ?? demoUrls.roomwise, category: process.env.PLUGIN_CATEGORY_ROOMWISE ?? process.env.PLUGIN_CATEGORY },
+  { dir: "wedding", url: await lookup("AISLE_URL", "aisle"), demo: process.env.DEMO_URL_AISLE ?? demoUrls.aisle, category: process.env.PLUGIN_CATEGORY_AISLE ?? process.env.PLUGIN_CATEGORY },
 ];
 const out = fileURLToPath(new URL("../dist/plugins/", import.meta.url));
 await rm(out, { recursive: true, force: true });

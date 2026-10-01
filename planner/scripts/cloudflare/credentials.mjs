@@ -90,7 +90,11 @@ export function envWithSavedCredentials(env = process.env, load = loadCredential
   return c ? { ...env, CLOUDFLARE_API_TOKEN: env.CLOUDFLARE_API_TOKEN ?? c.token, CLOUDFLARE_ACCOUNT_ID: env.CLOUDFLARE_ACCOUNT_ID ?? c.accountId } : { ...env };
 }
 
-// Publisher name and contact email: not secret, but they must be identical in every ZIP and on the legal pages, so remember them.
+// Publisher name, contact email and demo video links: not secret, but they must be the same in every ZIP, so remember them.
 const profileFile = (dir) => path.join(dir, "profile.json");
-export function saveProfile({ publisher, email }, dir = configDir()) { mkdirSync(dir, { recursive: true, mode: 0o700 }); writeFileSync(profileFile(dir), JSON.stringify({ publisher, email }, null, 2) + "\n", { mode: 0o600 }); }
-export function loadProfile(dir = configDir()) { try { const p = JSON.parse(readFileSync(profileFile(dir), "utf8")); return p.publisher && p.email ? p : null; } catch { return null; } }
+const readProfile = (dir) => { try { return JSON.parse(readFileSync(profileFile(dir), "utf8")); } catch { return {}; } };
+const writeProfile = (dir, data) => { mkdirSync(dir, { recursive: true, mode: 0o700 }); writeFileSync(profileFile(dir), JSON.stringify(data, null, 2) + "\n", { mode: 0o600 }); };
+export function saveProfile({ publisher, email }, dir = configDir()) { writeProfile(dir, { ...readProfile(dir), publisher, email }); }
+export function loadProfile(dir = configDir()) { const p = readProfile(dir); return p.publisher && p.email ? { publisher: p.publisher, email: p.email } : null; }
+export function saveDemoUrl(product, url, dir = configDir()) { const p = readProfile(dir); writeProfile(dir, { ...p, demoUrls: { ...(p.demoUrls ?? {}), [product]: url } }); }
+export function loadDemoUrls(dir = configDir()) { return readProfile(dir).demoUrls ?? {}; }

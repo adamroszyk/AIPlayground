@@ -74,7 +74,13 @@ It asks for the token (hidden), stores it as the Worker secret `OPENAI_APPS_CHAL
 Add each MCP URL (`https://roomwise.<subdomain>.workers.dev/mcp`, `https://aisle.<subdomain>.workers.dev/mcp`) as a connector in developer mode, with no authentication, and run the prompts. `npm run prompts` prints them with the tool each should call and what to look for. Watch for: the widget rendering, the edit link opening the editor, the model choosing the expected tool, the negative prompts being declined. Each product allows 50 solver calls a day, and the deploy smoke test already used 2 to 3 of them. Tell me what you see and I will fix it.
 
 ### 8. Demo video
-`npm run demo:video` records a captioned walkthrough of each product (real MCP call, real widget in an MCP Apps host, real web editor) into `planner/dist/demo/`. It is not footage from inside ChatGPT. Record the ChatGPT part yourself using `docs/plan/demo-script.md` and add it, since reviewers need to see the plugin used in ChatGPT. Host the result where reviewers can open it without signing in. Set `DEMO_URL_ROOMWISE` and `DEMO_URL_AISLE`.
+The dashboard's last review step asks for a video link (only reviewers see it). Record your own screen using ChatGPT: `npm run prompts -- --record` prints a shot list for each plugin (the prompts to paste, what to show, what to say). Upload it as Unlisted on YouTube (or Loom, or Google Drive with "Anyone with the link"), open the link in a private window to confirm it plays without signing in, then:
+```sh
+npm run demo-url -- roomwise https://youtu.be/...
+npm run demo-url -- aisle https://...
+npm run package:plugins
+```
+`demo-url` checks the link is https and not behind a sign-in page and remembers it; `package:plugins` puts it in the ZIP and copies the ZIP to Downloads. Upload the new ZIP. The captioned walkthroughs from `npm run demo:video` (real tool calls, widget and editor, not footage from ChatGPT) can be added as a second clip but do not replace the ChatGPT recording.
 
 ### 8b. If the dashboard rejects a field (for example the category)
 The dashboard's own lists decide. Rebuild with the exact wording shown there, then upload the new ZIP (package metadata changes need a new ZIP; the MCP URL stays the same):
