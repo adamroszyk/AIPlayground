@@ -6,47 +6,62 @@ const t = home.tokens;
 export const spec: PluginSpec = {
   name: "roomwise",
   version: "1.0.0",
-  description: "Plan where furniture goes in a room, to scale, and check it against clearance rules. Estimates flooring, paint and baseboard.",
-  keywords: ["room layout", "furniture", "floor plan", "interior", "home"],
+  description: "Room layout planner for home redesign, remodel and decorating projects. Plan where furniture goes, check that it fits against clearance rules, and estimate flooring, paint and baseboard.",
+  keywords: ["home redesign", "room layout", "furniture arrangement", "floor plan", "home remodel", "house decor", "interior design", "living room layout", "bedroom layout", "room planner", "home renovation", "flooring estimate", "paint calculator"],
   displayName: "Roomwise",
-  shortDescription: "Room layouts that check out",
+  shortDescription: "Home redesign room planner",
   longDescription: [
-    "Roomwise plans where furniture goes in one room, to scale, and then checks the result instead of just drawing it.",
+    "Plan a room layout for a home redesign, remodel or decorating refresh. Roomwise works out where furniture goes in one room, to scale, then checks the arrangement against clearance rules so you can see whether it will work before you move or buy anything.",
     "",
-    "Tell your assistant the room size, where the doors and windows are, and what you want to put in it. Roomwise finds an arrangement and checks it against clearance rules of thumb: main walkway width, door swings, space between sofa and coffee table, dining chair pull-back, and whether every piece can be reached. You get each piece's position and facing, a pass or fail for every rule with the measured value, and a link to open the plan in a web editor where you can drag pieces around and see the checks update.",
+    "What you can ask:",
+    "- Furniture layout and floor plan: give the room size, where the doors and windows are, and the furniture you want to use (living room, bedroom, home office or dining room). Roomwise returns each piece's position and facing, and a link to a to-scale plan you can edit on the web by dragging pieces around.",
+    "- Will it fit? Give an arrangement you already have, or a sofa, bed or table you are thinking of buying. Roomwise checks walkway width, door swings, sofa-to-coffee-table distance, dining chair pull-back and whether every piece can be reached, with the measured value for each rule.",
+    "- Remodel and renovation planning: how much flooring, paint and baseboard a room needs, with waste allowances, and a cost if you supply prices.",
     "",
-    "You can also give Roomwise an arrangement you already have and ask whether it works, or ask how much flooring, paint and baseboard a room needs, with waste allowances and a cost if you supply prices.",
+    "Who it is for: homeowners and renters planning a home redesign, a room refresh or a remodel, and anyone working out house decor layouts such as where the sofa, coffee table or dining table should go.",
     "",
-    "Who it is for: anyone arranging a living room, bedroom, home office or dining room, or checking whether a sofa will fit before buying it.",
+    "How it works: you describe the room in words and measurements. Roomwise does not need a photo. Results are rules of thumb for comfort and access, so measure twice.",
     "",
-    "What it does not do: it does not redesign a room from a photo, pick styles or colours, order furniture, or give building-code, structural or safety advice. One rectangular room at a time. Results are rules of thumb, so measure twice.",
+    "What it does not do: it does not redesign a room from a photo, choose styles, colours or decor, order furniture, or give building-code, structural or safety advice. One rectangular room at a time.",
     "",
-    "Saved plans are private links and are deleted 90 days after the last edit. No account is needed.",
+    "Privacy: saved plans are private links, deleted 90 days after the last edit. No account is needed.",
   ].join("\n"),
-  category: "Lifestyle",
-  capabilities: ["Plan a room layout", "Check a layout", "Estimate flooring and paint"],
+  category: "Productivity",
+  capabilities: ["Plan a furniture layout", "Check whether furniture fits", "Estimate flooring, paint and baseboard"],
   defaultPrompt: [
-    "Plan a 14 by 12 ft living room with a sofa, coffee table and TV unit.",
-    "Will a 90-inch sofa fit without blocking the door?",
-    "How much paint and flooring does a 12 by 10 ft bedroom need?",
+    "Help me redesign my living room layout: 14 by 12 ft with a sofa, coffee table and TV unit.",
+    "Will a 90-inch sofa fit in my room without blocking the door?",
+    "How much paint and flooring do I need to remodel a 12 by 10 ft bedroom?",
   ],
   server: "roomwise",
   glyph: "room",
   brand: { light: t.light.accent!, dark: t.dark.accent!, darkBg: t.dark.bg!, lightBg: t.light.bg! },
   skill: {
     name: "get-started",
-    description: "How to use Roomwise to plan and check a room layout, and what to ask the user first.",
+    description: "Use when someone wants help with a home redesign, room refresh, remodel or decorating project: plan a furniture layout or floor plan, check whether furniture fits, or estimate flooring, paint and baseboard. Ask for measurements first.",
     body: `
 # Getting started with Roomwise
 
-Use the Roomwise tools when someone wants to arrange furniture in a room, check whether a layout works, or estimate flooring, paint or baseboard.
+Roomwise plans furniture layouts for one room, checks them against clearance rules, and estimates flooring, paint and baseboard.
+
+## When to use it
+
+Use the Roomwise tools when someone is working on a home redesign, room refresh, remodel, renovation or decorating project and asks to:
+
+- arrange or rearrange furniture, or make a furniture layout or floor plan for a living room, bedroom, home office or dining room
+- check whether a sofa, bed, desk or table will fit, or whether an arrangement blocks a door or walkway
+- work out how much flooring, paint or baseboard a room needs
+
+## When not to use it
+
+Redesigning from a photo, choosing styles, colours or decor, ordering furniture, multi-room floor plans, permits, and anything about walls, structure or building codes. Say what is not supported and offer what Roomwise can do (the layout and the measurements).
 
 ## Ask before you plan
 
 Never guess measurements. Make sure you have:
 
 - Room width (west to east) and length (north to south).
-- Each door and window: which wall, how far from the corner, how wide. Say which way north is on the plan: north is the top wall.
+- Each door and window: which wall, how far from the corner, how wide. North is the top wall of the plan.
 - Each piece of furniture with its width and depth. Offer typical sizes only if the user does not know, and say they are typical.
 
 ## Choose the tool
@@ -61,10 +76,6 @@ Never guess measurements. Make sure you have:
 - If pieces could not be placed, say so instead of implying everything fit.
 - Share the edit link so the user can adjust the plan on the web, and the view-only link if they want to show someone. Tell them plans are deleted 90 days after the last edit.
 - These are rules of thumb, not building-code or structural advice. Do not say a wall can be removed or that a layout is safe or code compliant.
-
-## Out of scope
-
-Redesigning from photos, choosing styles or colours, ordering furniture, multi-room floor plans, permits. Say what is not supported and offer what Roomwise can do.
 `,
   },
   cases: {

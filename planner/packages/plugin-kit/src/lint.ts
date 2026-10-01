@@ -149,6 +149,18 @@ export function lintPlugin(files: Files, opt: LintOptions = {}): LintResult {
   if (ui.brandColorDark !== undefined) { if (!isStr(ui.brandColorDark) || !/^#[0-9a-fA-F]{6}$/.test(ui.brandColorDark)) err("interface.brandColorDark must be #RRGGBB."); else if (contrast(ui.brandColorDark, "#212121") < 2) err(`interface.brandColorDark ${ui.brandColorDark} has contrast ${contrast(ui.brandColorDark, "#212121").toFixed(2)}:1 against #212121; it needs at least 2:1.`); }
   if (isStr(ui.websiteURL) && serverUrl) { try { if (new URL(ui.websiteURL).host !== new URL(serverUrl).host) warnings.push("websiteURL and the MCP URL are on different hosts. The domain-verification token is per hostname, so verify the MCP host."); } catch { /* reported above */ } }
 
+  // --- OpenAI plugin guidelines: names, descriptions and claims ---
+  if (isStr(ui.displayName) && /\b(mcp|plugin|server)\b/i.test(ui.displayName)) err('interface.displayName must not contain "MCP", "Server" or "Plugin". Use the product name on its own.');
+  const prose: [string, unknown][] = [["interface.displayName", ui.displayName], ["interface.shortDescription", ui.shortDescription], ["interface.longDescription", ui.longDescription], ["description", m.description], ...prompts.map((p, i): [string, unknown] => [`interface.defaultPrompt[${i}]`, p])];
+  const PRICING = /\b(free|freemium|discounts?|promo\w*|coupons?|subscriptions?|trials?)\b|[$€£]\s?\d|\d\s?% off/i;
+  const CLAIMS = /(?:^|\W)#1(?:\W|$)|\b(best|number one|leading|top[- ]rated|world[- ]class|better than|faster than|unlike|alternative to|instead of just|beats?)\b/i;
+  for (const [k, v] of prose) {
+    if (!isStr(v)) continue;
+    const price = PRICING.exec(v), claim = CLAIMS.exec(v);
+    if (price) err(`${k} mentions "${price[0].trim()}". The guidelines do not allow advertising pricing, subscriptions, free trials, discounts or promotions.`);
+    if (claim) err(`${k} says "${claim[0].trim()}". The guidelines require descriptions without comparisons to other products or unverifiable claims.`);
+  }
+
   // --- images ---
   const imgs: [string, unknown, boolean][] = [["logo", ui.logo, true], ["composerIcon", ui.composerIcon, true], ["logoDark", ui.logoDark, false], ["composerIconDark", ui.composerIconDark, false]];
   for (const s of Array.isArray(ui.screenshots) ? ui.screenshots : []) imgs.push(["screenshots[]", s, false]);

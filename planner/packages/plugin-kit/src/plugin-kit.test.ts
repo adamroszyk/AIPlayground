@@ -46,6 +46,20 @@ test("limits from the submission doc are enforced", () => {
   assert.ok(errs(edit(good(), (m) => { m.extensions["com.openai"].interface.developerName = "Other"; })).some((e) => /developerName/.test(e)));
   assert.ok(errs(edit(good(), (m) => { m.name = "Bad_Name"; })).some((e) => /"name"/.test(e)));
 });
+test("OpenAI plugin guidelines: names, pricing talk, comparisons and unverifiable claims", () => {
+  const field = (k: string, v: string) => errs(edit(good(), (m) => { m.extensions["com.openai"].interface[k] = v; }));
+  assert.ok(field("displayName", "Demo MCP Server").some((e) => /displayName must not contain/.test(e)));
+  assert.ok(field("displayName", "Demo Plugin").some((e) => /displayName must not contain/.test(e)));
+  assert.ok(field("longDescription", "Try it free for 14 days.").some((e) => /free.*pricing|pricing.*free/i.test(e)));
+  assert.ok(field("longDescription", "Only $9 a month.").some((e) => /pricing/.test(e)));
+  assert.ok(field("longDescription", "20% off this week.").some((e) => /pricing/.test(e)));
+  assert.ok(field("shortDescription", "The best planner").some((e) => /comparisons|unverifiable/.test(e)));
+  assert.ok(field("longDescription", "Better than spreadsheets, unlike other tools.").some((e) => /comparisons|unverifiable/.test(e)));
+  assert.ok(field("longDescription", "The #1 room planner.").some((e) => /unverifiable/.test(e)));
+  assert.ok(errs(edit(good(), (m) => { m.description = "Free trial included."; })).some((e) => /description mentions/.test(e)));
+  assert.ok(errs(edit(good(), (m) => { m.extensions["com.openai"].interface.defaultPrompt = ["Find the best layout."]; })).some((e) => /defaultPrompt\[0\]/.test(e)));
+  assert.deepEqual(field("longDescription", "It costs nothing to describe the room; a cost is shown if you supply prices."), [], "ordinary words are fine");
+});
 test("exactly five positive and three negative cases; tools must exist", () => {
   assert.ok(errs(edit(good(), (m) => { m.extensions["com.openai"].review.test_cases.positive.pop(); })).some((e) => /exactly 5/.test(e)));
   assert.ok(errs(edit(good(), (m) => { m.extensions["com.openai"].review.test_cases.negative.pop(); })).some((e) => /exactly 3/.test(e)));

@@ -58,3 +58,10 @@ Also: `npm run deploy` is now a single interactive command (hidden token input, 
 
 Both products deployed to Cloudflare Workers (workers.dev, Workers Paid) with D1 and KV provisioned, migrations applied and the post-deploy smoke test passing (28 checks each, including all review cases against the live servers). A brand-new workers.dev address needed up to about 16 seconds before it answered, so the smoke test now waits. Plugin ZIPs built.
 Added: `npm run credentials` (token in the OS keychain, account id in a private config file), `npm run set-challenge`, `npm run prompts`, token permission preflight, secret scanner and commit hook. The macOS Keychain path is covered by tests that mock the `security` command, not by a run on a Mac.
+
+## 2026-10-01: listing copy pass against OpenAI's plugin guidelines
+
+- Rewrote both listings, skills and all six tool descriptions around the terms people use (home redesign, remodel, house decor, floor plan, furniture layout; wedding seating chart, table plan, wedding timeline) while keeping every claim true: Roomwise states up front that it works from measurements, not photos, and does not choose decor.
+- Applied the guideline rules available to me: no generic single-word names (Aisle is now "Aisle Seating Chart"), no comparisons or unverifiable claims, no pricing or promotion wording, tool descriptions start "Use this when" and say when not to use the tool. The linter and the review tests now enforce these.
+- The guidelines PDF supplied contained only the first screen of the page (overview), not the rules sections, so the safety, privacy, commerce, MCP and skills sections have not been checked yet.
+- No search-volume data was used or available; the keywords are the obvious plain-language terms, not measured ones.

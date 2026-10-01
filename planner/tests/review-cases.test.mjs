@@ -38,7 +38,7 @@ for (const p of products) {
     const { rpc } = mcpClient(workers.get(p.dir).base);
     const tools = (await rpc("tools/list")).result.tools;
     const planner = tools.find((t) => /^plan_/.test(t.name));
-    assert.match(planner.description, /does not/i, "the main tool says what it does not do");
+    assert.match(planner.description, /do not use|does not/i, "the main tool says what it must not be used for");
     const prompts = [...spec.cases.positive, ...spec.cases.negative].map((c) => c.prompt);
     assert.equal(new Set(prompts).size, 8);
     for (const c of spec.cases.positive) assert.ok(c.expected_behavior.length > 20 && c.description.length > 5);
@@ -50,6 +50,16 @@ for (const p of products) {
     const r = compareTools(approved, live);
     assert.deepEqual(r.breaking, [], "breaking tool change: " + r.breaking.join("; "));
     assert.deepEqual(r.held, [], "this change would be held for OpenAI review: " + r.held.join("; "));
+  });
+
+  test(`${p.dir}: tool descriptions follow OpenAI's metadata guidance (start with "Use this when", say when not to use it)`, async () => {
+    const tools = (await mcpClient(workers.get(p.dir).base).rpc("tools/list")).result.tools;
+    for (const t of tools) {
+      assert.match(t.description, /^Use this when/, `${t.name} should start with "Use this when"`);
+      assert.match(t.description, /Do not use/, `${t.name} should say when not to use it`);
+      assert.ok(t.description.length <= 1200, `${t.name} description is ${t.description.length} characters`);
+      assert.doesNotMatch(t.description, /\b(best|free|cheap|guarantee[sd]?)\b/i, `${t.name} makes no unverifiable or pricing claims`);
+    }
   });
 
   test(`${p.dir}: every tool has the metadata OpenAI reviews`, async () => {

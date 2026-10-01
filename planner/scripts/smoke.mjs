@@ -37,7 +37,7 @@ for (const p of ["/", "/privacy/", "/terms/", "/support/", "/app/", "/robots.txt
 }
 const home = await get("/");
 ok(/content-security-policy/i.test([...home.headers.keys()].join(",")) && /frame-ancestors|default-src/.test(home.headers.get("content-security-policy") ?? ""), "landing page sends a Content-Security-Policy");
-ok((await (await get("/privacy/")).text()).includes(spec.displayName), "privacy page names the product");
+ok((await (await get("/privacy/")).text()).toLowerCase().includes(spec.server), "privacy page names the product");
 ok((await get("/nope-" + Date.now())).status === 404, "unknown path is 404");
 
 // 2. domain verification

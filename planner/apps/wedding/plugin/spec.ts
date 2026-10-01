@@ -6,42 +6,55 @@ const t = wedding.tokens;
 export const spec: PluginSpec = {
   name: "aisle-seating",
   version: "1.0.0",
-  description: "Build a wedding seating chart that satisfies your rules, check one you already have, and plan the day-of timeline.",
-  keywords: ["wedding", "seating chart", "timeline", "reception", "events"],
-  displayName: "Aisle",
-  shortDescription: "Seating charts, rules checked",
+  description: "Wedding seating chart maker and day-of timeline builder. Seat guests around your rules (together, apart, head table), check an existing seating plan, and build a wedding day schedule.",
+  keywords: ["wedding seating chart", "reception seating", "table plan", "seating arrangement", "seating plan", "wedding planning", "wedding timeline", "wedding day schedule", "head table", "guest list"],
+  displayName: "Aisle Seating Chart",
+  shortDescription: "Wedding seating chart maker",
   longDescription: [
-    "Aisle builds wedding seating charts that follow your rules, and shows that they do.",
+    "Make a wedding seating chart that follows your rules. Aisle seats your guests at the reception tables, keeps couples and families together, keeps people apart when you need to, and then re-checks every rule on the finished table plan so you can see that it works.",
     "",
-    "Give your assistant the guest list (names or first names, with optional groups and parties such as couples or families), the tables and their sizes, and the rules: who must sit together, who must be kept apart, who sits at the head table, and anyone who has to be at a particular table. Aisle seats everyone, keeps parties together and groups close, and then re-checks every rule on the finished chart. You get who sits where, a pass or fail for each rule, and a link to open the chart in a web editor where you can drag guests between seats and see the rules re-checked as you go.",
+    "What you can ask:",
+    "- Seating chart and table plan: give the guest list (first names are enough, with optional groups such as \"bride's family\" and parties such as couples or families with kids), the tables and their sizes, and your rules: who must sit together, who must be kept apart, who sits at the head table, and anyone who has to be at a particular table. You get who sits where, a pass or fail for each rule, and a link to edit the chart on the web by dragging guests between seats.",
+    "- Does my seating plan work? Give a seating arrangement you already have and Aisle checks it against your rules.",
+    "- Wedding day timeline: from the ceremony start time, build a schedule for guest arrival, ceremony, photos, travel between venues, cocktail hour, dinner, toasts, first dance, cake and dancing, with buffers and warnings for a venue curfew or photos after sunset.",
     "",
-    "If your rules cannot all be met, Aisle says which ones conflict and why, shows the closest chart it could build, and names the rules you could relax. You can also give Aisle a chart you already have and ask whether it works.",
+    "If your rules cannot all be met, Aisle says which ones conflict and why, shows the closest chart it could build, and names the rules you could relax.",
     "",
-    "Aisle can also build a day-of timeline from the ceremony start: guest arrival, ceremony, photos, travel between venues, cocktail hour, dinner, toasts, first dance, cake and dancing, with buffers, and warnings for a venue curfew or photos after sunset.",
+    "Who it is for: couples, parents and wedding planners with a guest list and a few awkward seating rules.",
     "",
-    "Who it is for: couples and planners with a guest list and a few awkward rules.",
+    "What it does not do: it is not a full wedding planner. It does not book vendors, send invitations, manage RSVPs or budgets, take payments, or know your venue's floor plan (you give it the number and size of tables). Please use first names or initials where you can.",
     "",
-    "What it does not do: it does not book vendors, send invitations, manage RSVPs or budgets, or take payments. It does not know your venue's floor plan; you tell it the number and size of tables. Please use first names or initials where you can.",
-    "",
-    "Saved charts are private links and are deleted 90 days after the last edit. No account is needed.",
+    "Privacy: saved charts are private links, deleted 90 days after the last edit. No account is needed.",
   ].join("\n"),
-  category: "Lifestyle",
-  capabilities: ["Plan wedding seating", "Check a seating chart", "Build a wedding timeline"],
+  category: "Productivity",
+  capabilities: ["Make a wedding seating chart", "Check a seating plan against your rules", "Build a wedding day timeline"],
   defaultPrompt: [
-    "Seat 60 guests at tables of 8 and keep the Smiths together.",
-    "Check whether this seating chart follows my rules.",
-    "Build a timeline for a 4pm ceremony with a 20 minute drive.",
+    "Make a wedding seating chart for 60 guests at tables of 8 and keep the Smiths together.",
+    "Does my reception seating plan follow my rules? Here are the tables and who sits where.",
+    "Build a wedding day timeline for a 4pm ceremony with a 20 minute drive to the reception.",
   ],
   server: "aisle",
   glyph: "table",
   brand: { light: t.light.accent!, dark: t.dark.accent!, darkBg: t.dark.bg!, lightBg: t.light.bg! },
   skill: {
     name: "get-started",
-    description: "How to use Aisle to build and check a wedding seating chart and a day-of timeline, and what to ask the user first.",
+    description: "Use when someone wants a wedding seating chart, reception table plan or seating arrangement built around rules, wants to check one they already have, or wants a wedding day timeline. Ask for the guests, tables and rules first.",
     body: `
 # Getting started with Aisle
 
-Use the Aisle tools when someone wants a wedding seating chart, wants to check one, or wants a day-of timeline.
+Aisle builds wedding seating charts that satisfy the couple's rules, checks existing ones, and builds a day-of timeline.
+
+## When to use it
+
+Use the Aisle tools when someone is planning a wedding or reception and asks to:
+
+- make a seating chart, table plan or seating arrangement, with people who must sit together or apart, a head table, or fixed seats
+- check whether a seating plan they already have follows their rules
+- build a wedding day timeline or schedule from the ceremony start time
+
+## When not to use it
+
+Booking vendors, sending invitations, RSVPs, budgets, payments, venue floor plans, and seating rules based on location in the room (near the exit, near the stage). Aisle is not a full wedding planner: say what is not supported and offer what Aisle can do.
 
 ## Ask before you plan
 
@@ -62,10 +75,6 @@ Use the Aisle tools when someone wants a wedding seating chart, wants to check o
 - If the rules conflict, relay the conflict and suggest which rule to relax. Do not pretend the chart works.
 - Share the edit link so the user can drag guests around on the web, and the view-only link to show others. Tell them charts are deleted 90 days after the last edit.
 - Guest names are personal data about other people. Do not ask for more than names, groups and rules.
-
-## Out of scope
-
-Booking vendors, sending invitations, RSVPs, budgets, payments, venue floor plans, and seating rules based on location in the room (near the exit, near the stage). Say what is not supported and offer what Aisle can do.
 `,
   },
   cases: {

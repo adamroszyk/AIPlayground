@@ -48,7 +48,7 @@ export function createServer(env: ToolEnv): McpServer {
     {
       title: "Plan wedding seating",
       description:
-        "Builds a wedding seating chart. Given the guest list (with optional groups and parties), the tables, and rules (keep together, keep apart, head table, fixed seat), it seats everyone, keeps parties together and groups close, and then re-checks every rule on the finished chart. Returns who sits at each table, a pass/fail report for each rule, and links to view and edit the chart on the web. If the rules cannot all be met it says which ones conflict and returns the closest chart. Use when the user wants a seating chart or to seat guests around rules. It does not send invitations or book vendors.",
+        "Use this when the user wants a wedding or reception seating chart, table plan or seating arrangement built from a guest list and rules. Given the guests (with optional groups and parties), the tables, and rules (keep together, keep apart, head table, fixed seat), it seats everyone, keeps parties together and groups close, then re-checks every rule on the finished chart. Returns who sits at each table, a pass/fail report for each rule, and links to view and edit the chart on the web. If the rules cannot all be met it says which ones conflict and returns the closest chart. Do not use to send invitations, book vendors, manage RSVPs or budgets, or for rules based on position in the room (near the exit or the stage).",
       inputSchema: z.object({ ...problem, save: z.boolean().default(true).describe("Save the chart and return links to view and edit it.") }),
       annotations: { ...CREATES_PLAN, title: "Plan wedding seating" },
       _meta: { ui: { resourceUri: WIDGET_URI } },
@@ -90,7 +90,7 @@ export function createServer(env: ToolEnv): McpServer {
     {
       title: "Check a seating chart",
       description:
-        "Checks a seating chart the user already has (or has edited) against their rules without changing it: capacity, everyone seated exactly once, parties together, and every keep-together, keep-apart, head-table and fixed-seat rule. Returns pass/fail with details for each. Use to answer 'does this seating work?' for a specific arrangement.",
+        "Use this when the user already has a wedding seating chart (or has edited one) and asks whether it follows their rules. Checks it without changing it: capacity, everyone seated exactly once, parties together, and every keep-together, keep-apart, head-table and fixed-seat rule. Returns pass/fail with details for each. Do not use to build a new chart (use plan_wedding_seating).",
       inputSchema: z.object({ ...problem, arrangement: z.array(z.object({ table: z.string().describe("Table name, e.g. 'Table 2'."), guests: z.array(z.string()) })).describe("Who sits at each table.") }),
       annotations: { ...READ_ONLY, title: "Check a seating chart" },
     },
@@ -113,7 +113,7 @@ export function createServer(env: ToolEnv): McpServer {
     {
       title: "Build a wedding day timeline",
       description:
-        "Builds a day-of schedule from the ceremony start time: guest arrival, ceremony, photos, optional travel between venues, cocktail hour, dinner, toasts, first dance, cake and dancing, with buffers between segments. Warns if it runs past a venue curfew or if photos run after sunset. Times are 24-hour HH:MM. Use when the user wants a wedding day schedule. Durations are in minutes and all optional.",
+        "Use this when the user wants a wedding day timeline or schedule from the ceremony start time: guest arrival, ceremony, photos, optional travel between venues, cocktail hour, dinner, toasts, first dance, cake and dancing, with buffers between segments. Warns if it runs past a venue curfew or if photos run after sunset. Times are 24-hour HH:MM and all durations are optional minutes. Do not use to book vendors or venues, or to plan events that span several days.",
       inputSchema: z.object({
         ceremonyStart: z.string().describe("Ceremony start, 24-hour HH:MM, e.g. 16:00."),
         ceremonyMinutes: z.number().min(0).max(240).optional().describe(`Ceremony length in minutes (default ${D.ceremonyMinutes}).`),

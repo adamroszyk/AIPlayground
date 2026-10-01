@@ -61,7 +61,7 @@ export function createServer(env: ToolEnv): McpServer {
     {
       title: "Plan a room layout",
       description:
-        "Plans where furniture goes in one room, to scale. Given the room's size, door and window positions, and a list of furniture with sizes, it finds a layout and checks it against clearance rules: walkway width, door swings, sofa-to-coffee-table distance, dining and storage clearance, and whether every seat can be reached. Returns each piece's position and facing, a pass/fail report with measured values, and links to view and edit the plan on the web. Use when the user wants to arrange furniture or check whether pieces fit. It does not redesign a room from a photo or choose styles.",
+        "Use this when the user wants to plan, arrange or rearrange furniture in a room for a home redesign, remodel or decorating project, or to see whether a set of furniture will fit. Plans where furniture goes in one room, to scale, from the room's size, door and window positions, and a list of furniture with sizes, then checks the layout against clearance rules: walkway width, door swings, sofa-to-coffee-table distance, dining and storage clearance, and whether every seat can be reached. Returns each piece's position and facing, a pass/fail report with measured values, and links to view and edit the plan on the web. Do not use to redesign a room from a photo, choose styles, colours or decor, order furniture, or give structural or building-code advice.",
       inputSchema: z.object({ unit, room: roomShape, furniture: z.array(furniture).min(1).max(25), save: z.boolean().default(true).describe("Save the plan and return links to view and edit it. Set false for a throwaway check.") }),
       annotations: { ...CREATES_PLAN, title: "Plan a room layout" },
       _meta: { ui: { resourceUri: WIDGET_URI } },
@@ -103,7 +103,7 @@ export function createServer(env: ToolEnv): McpServer {
     {
       title: "Check a room layout",
       description:
-        "Checks a layout the user already has (or has edited) against the same clearance rules, without moving anything. Each piece needs its position (its north-west corner measured from the room's north-west corner) and the direction it faces. Returns pass/fail for each rule with measured values such as the narrowest walkway. Use to answer 'will this arrangement work?' for specific positions.",
+        "Use this when the user already has furniture positions (or has edited a plan) and asks whether the arrangement works, for example whether a sofa blocks a door or sits too close to a coffee table. Checks them against the same clearance rules without moving anything. Each piece needs its position (its north-west corner measured from the room's north-west corner) and the direction it faces. Returns pass/fail for each rule with measured values such as the narrowest walkway. Do not use to find a new arrangement (use plan_room_layout) or to give structural or building-code advice.",
       inputSchema: z.object({ unit, room: roomShape, furniture: z.array(placedFurniture).min(1).max(25) }),
       annotations: { ...READ_ONLY, title: "Check a room layout" },
     },
@@ -126,7 +126,7 @@ export function createServer(env: ToolEnv): McpServer {
     {
       title: "Estimate flooring, paint and baseboard",
       description:
-        "Calculates how much flooring, paint and baseboard a room needs from its size and openings, with waste allowances, and the cost if unit prices are given. Returns floor area, paint gallons (exact and to buy), baseboard length and stated assumptions. Use for 'how much paint/flooring do I need?'. Prices are in the user's own currency; flooring is priced per square foot, baseboard per foot and paint per gallon.",
+        "Use this when the user asks how much flooring, paint or baseboard a room needs for a remodel, renovation or refresh. Calculates quantities from the room's size and openings, with waste allowances, and the cost if unit prices are given. Returns floor area, paint gallons (exact and to buy), baseboard length and the assumptions used. Prices are in the user's own currency; flooring is priced per square foot, baseboard per foot and paint per gallon. Do not use for contractor quotes, labour costs, tile pattern layouts, or ordering materials.",
       inputSchema: z.object({
         unit,
         room: roomShape,
