@@ -23,6 +23,26 @@ Search snippets of it and its sibling pages ([app review](https://developers.ope
 | Prohibited categories (adult, gambling, drugs, Rx, counterfeit, fraud tools, malware) | None of the shortlist is affected |
 | Ranking and recommendation "improved" at DevDay; rules not documented; one source says retention is favoured | **Repeat-use products rank better**, which favours recurring workflows over one-off calculators |
 
+### Verified from your PDF (firsthand, but only one page)
+
+The uploaded PDF contains **one page**: a screenshot of the "Update to your MCP server" section. Its table of contents confirms the flow:
+1. Upload your plugin ZIP → 2. Review checks and resolve issues → 3. Submit for review → 4. Publish your approved plugin → update a published plugin → **update to your MCP server** → automatically provide submission and review information.
+The sidebar shows the doc set: plugin architecture, skills, MCP server, brainstorm use cases, define tools, build an MCP server, add UI (optional), add events (optional), extensions, authenticate users, build skills, package your plugin, examples.
+**Steps 1-4 themselves (requirements, test cases, verification) are not in the PDF**, so the secondhand table above is still unverified. What the page does say:
+
+- There is an **automated MCP scan** of your server. You can **rescan** after server changes; rescan can be unavailable during another scan, an active appeal, or when the plugin is not eligible for scanning.
+- Per-tool issue flow: open **Issues** → select the affected tool → compare **Held update** (the metadata that was evaluated) with **Live definition** (what is currently in use) → **Copy issues** → fix the metadata or implementation on your server and deploy → **Rescan**.
+- **Tool changes are evaluated independently.** A flagged change does not necessarily block other tool updates. **New tools remain unavailable until approved.** Existing tools **keep their previously approved metadata** when an update is held. Removals take effect after a scan.
+- You must **keep the server compatible with the currently approved tool schemas** until updated metadata is live.
+- You can **appeal** an automated finding; the review team considers the held changes together, and fixing the server and rescanning is usually faster.
+
+**What this changes for us:**
+
+- **Tool names, descriptions and schemas are reviewed, and later edits go through the same gate.** The advice to tune descriptions to the phrases people type is therefore slow to iterate on: each wording change can sit as a held update, and new tools stay unavailable until approved.
+- **Design the tool surface once, and keep it small and stable.** Prefer a few general tools with optional parameters (additive changes only) over many narrow ones. For the roster product that means something like `build_schedule`, `check_schedule`, `adjust_schedule`, not one tool per industry. This favours the citation verifier (two or three stable tools) as the first thing to submit, and means the roster's tool schema needs more up-front design.
+- **Our server must stay backward compatible** with whatever was approved, so schema versioning is part of the build, not an afterthought.
+- Extensions, events and "Sign in with ChatGPT" exist as separate doc sections; I have not seen their content.
+
 Claude's directory (read from Anthropic's own docs earlier) needs a privacy policy, annotated tools, HTTPS Streamable HTTP, and a paid plan to submit. Grok is a pull request to its plugin marketplace.
 
 ## Decision criteria
