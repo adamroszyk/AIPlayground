@@ -65,3 +65,7 @@ Added: `npm run credentials` (token in the OS keychain, account id in a private 
 - Applied the guideline rules available to me: no generic single-word names (Aisle is now "Aisle Seating Chart"), no comparisons or unverifiable claims, no pricing or promotion wording, tool descriptions start "Use this when" and say when not to use the tool. The linter and the review tests now enforce these.
 - The guidelines PDF supplied contained only the first screen of the page (overview), not the rules sections, so the safety, privacy, commerce, MCP and skills sections have not been checked yet.
 - No search-volume data was used or available; the keywords are the obvious plain-language terms, not measured ones.
+
+## 2026-10-01: hosted demo walkthrough
+
+Added a public, unindexed `/demo/` page per product that plays the captioned walkthrough (real tool calls, widget and editor against the live server) from the product's own site; the page says plainly that it is not a ChatGPT recording. Static assets are free and need no sign-in, so the link works for reviewers without Google Drive or YouTube. The recording inside ChatGPT still has to be made by the account owner.

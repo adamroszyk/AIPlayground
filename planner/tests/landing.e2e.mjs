@@ -62,6 +62,18 @@ for (const [key, base, name] of apps) {
   ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${key}: no horizontal scroll at 375px`);
   await page.screenshot({ path: `${SP}/p1-${key}-mobile.png`, fullPage: true });
   ok(errors.length === 0, `${key}: no console errors (CSP clean)` + (errors.length ? " -> " + errors.join(" | ") : ""));
+  // hosted demo walkthrough: public page, a real video file, not indexed, not in the sitemap
+  {
+    const demoPage = await fetch(`${base}/demo/`);
+    const html = await demoPage.text();
+    ok(demoPage.status === 200 && /<video controls[^>]*src="\/demo\/[\w-]+\.mp4"/.test(html), `${key}: /demo/ page has a video player`);
+    ok(/noindex/.test(html) && !/\/demo\//.test(await (await fetch(`${base}/sitemap.xml`)).text()), `${key}: demo page is noindex and not in the sitemap`);
+    ok(/not a screen recording of a ChatGPT conversation/.test(html), `${key}: demo page says plainly what the video is`);
+    const file = /src="(\/demo\/[\w-]+\.mp4)"/.exec(html)?.[1];
+    const vid = await fetch(`${base}${file}`);
+    const len = Number(vid.headers.get("content-length") ?? (await vid.arrayBuffer()).byteLength);
+    ok(vid.status === 200 && /^video\/mp4/.test(vid.headers.get("content-type") ?? "") && len > 100000, `${key}: ${file} is served as video/mp4 (${Math.round(len / 1024)} KB)`);
+  }
   await page.close();
 }
 await browser.close();

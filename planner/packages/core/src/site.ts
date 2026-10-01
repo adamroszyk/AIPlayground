@@ -62,6 +62,7 @@ header.top nav{display:flex;gap:18px}header.top nav a{color:var(--muted);text-de
 @media(max-width:640px){header.top nav a:not(.cta){display:none}}
 .btn{display:inline-block;padding:12px 22px;border-radius:999px;background:var(--accent);color:var(--accent-fg);font-weight:600;text-decoration:none;border:0;cursor:pointer;font-size:16px}
 .btn:hover{filter:brightness(1.08)}.btn.small{padding:8px 16px;font-size:14px}.btn.secondary{background:transparent;color:var(--fg);border:1px solid var(--line)}.try{margin:14px 0 0}
+.legal video{display:block;width:100%;max-width:960px;height:auto;border-radius:14px;border:1px solid var(--line);background:#000;margin:18px 0}
 .hero{display:grid;grid-template-columns:1.05fr 1fr;gap:48px;align-items:center;padding:64px 0 40px}
 @media(max-width:860px){.hero{grid-template-columns:1fr;padding-top:36px;gap:28px}}
 .eyebrow{display:inline-block;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:14px}
@@ -265,6 +266,18 @@ export function renderTerms(cfg: ProductConfig, env: SiteEnv): string {
   return shell(cfg, env, { title: `Terms of service | ${cfg.name}`, description: `Terms for using ${cfg.name}.`, path: "/terms/", body });
 }
 
+/** A reviewer-facing page that plays a demo walkthrough hosted on this site (public, no sign-in, not indexed). */
+export function renderDemo(cfg: ProductConfig, env: SiteEnv, o: { videoFile: string; segments: string[] }): string {
+  const body = `<main class="legal">
+<h1>${esc(cfg.name)} demo walkthrough</h1>
+<p>This video was recorded against the live ${esc(cfg.name)} server. It shows the real tool calls and results, the widget as a ChatGPT-style host renders it, and the web editor. It is not a screen recording of a ChatGPT conversation.</p>
+<video controls preload="metadata" src="/demo/${esc(o.videoFile)}"></video>
+<h2>What it shows</h2>
+<ul>${o.segments.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+<p><a href="/">Back to ${esc(cfg.name)}</a> · <a href="/privacy/">Privacy policy</a> · <a href="/support/">Support</a></p>
+</main>`;
+  return shell(cfg, env, { title: `Demo walkthrough | ${cfg.name}`, description: `A walkthrough of ${cfg.name}.`, path: "/demo/", body, noindex: true });
+}
 export function renderSupport(cfg: ProductConfig, env: SiteEnv): string {
   const body = `<main class="legal">
 <h1>Support</h1>
