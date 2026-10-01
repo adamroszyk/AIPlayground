@@ -15,7 +15,7 @@ test("flags real-looking credentials", () => {
   assert.ok(scanText("x", `CLOUDFLARE_API_TOKEN=${fake.cf}`).length > 0);
 });
 test("does not flag the placeholders and variable names used in the docs and scripts", () => {
-  for (const ok of ["export CLOUDFLARE_API_TOKEN=<your token>", "CLOUDFLARE_API_TOKEN is not set", "process.env.CLOUDFLARE_API_TOKEN", 'CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}', "authorization: `Bearer ${token}`", "const id = 048ff2c67aff7f285894f73f3abcc6d0", "OPENAI_APPS_CHALLENGE_ROOMWISE=<token>"]) assert.deepEqual(scanText("x", ok), [], ok);
+  for (const ok of ["export CLOUDFLARE_API_TOKEN=<your token>", "CLOUDFLARE_API_TOKEN is not set", "process.env.CLOUDFLARE_API_TOKEN", 'CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}', "authorization: `Bearer ${token}`", "const id = 048ff2c67aff7f285894f73f3abcc6d0", "OPENAI_APPS_CHALLENGE_ROOMWISE=<token>", "{ CLOUDFLARE_API_TOKEN: env.CLOUDFLARE_API_TOKEN ?? c.token, CLOUDFLARE_ACCOUNT_ID: x }", "const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN_VALUE"]) assert.deepEqual(scanText("x", ok), [], ok);
 });
 
 // End to end in a throwaway git repo, run from a subdirectory (the case that broke the first version).

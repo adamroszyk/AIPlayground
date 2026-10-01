@@ -76,6 +76,13 @@ Add each MCP URL (`https://roomwise.<subdomain>.workers.dev/mcp`, `https://aisle
 ### 8. Demo video
 `npm run demo:video` records a captioned walkthrough of each product (real MCP call, real widget in an MCP Apps host, real web editor) into `planner/dist/demo/`. It is not footage from inside ChatGPT. Record the ChatGPT part yourself using `docs/plan/demo-script.md` and add it, since reviewers need to see the plugin used in ChatGPT. Host the result where reviewers can open it without signing in. Set `DEMO_URL_ROOMWISE` and `DEMO_URL_AISLE`.
 
+### 8b. If the dashboard rejects a field (for example the category)
+The dashboard's own lists decide. Rebuild with the exact wording shown there, then upload the new ZIP (package metadata changes need a new ZIP; the MCP URL stays the same):
+```sh
+PLUGIN_CATEGORY_ROOMWISE="<exact category>" PLUGIN_CATEGORY_AISLE="<exact category>" npm run package:plugins
+```
+`package:plugins` refuses to build if it cannot tell where the plugin is deployed or if the publisher name or email is missing, so a placeholder ZIP cannot be produced by accident.
+
 ### 9. Build the release ZIPs
 ```sh
 export DEMO_URL_ROOMWISE=... DEMO_URL_AISLE=...

@@ -6,13 +6,29 @@ import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { buildPluginFiles, lintPlugin, readZip, writeZip, type PluginSpec } from "@planner/plugin-kit";
 // @ts-ignore plain JS helper
 import { resolveSiteUrl } from "./cloudflare/cf.mjs";
+// @ts-ignore plain JS helper
+import { envWithSavedCredentials, loadProfile } from "./cloudflare/credentials.mjs";
 
 const release = process.argv.includes("--release");
-const publisher = process.env.PUBLISHER_NAME ?? "[Publisher name]";
-const email = process.env.CONTACT_EMAIL ?? "";
+const allowPlaceholders = process.argv.includes("--allow-placeholders");
+const env = envWithSavedCredentials();
+const profile = loadProfile();
+const publisher = process.env.PUBLISHER_NAME ?? profile?.publisher ?? "[Publisher name]";
+const email = process.env.CONTACT_EMAIL ?? profile?.email ?? "";
+if ((publisher === "[Publisher name]" || !email) && !allowPlaceholders) {
+  console.error("Publisher name or contact email is missing, so the ZIP would show a placeholder.\nSet PUBLISHER_NAME and CONTACT_EMAIL (or run 'npm run deploy' once, which remembers them) and try again.");
+  process.exit(1);
+}
+const lookup = async (envName: string, workerName: string) => {
+  const url = await resolveSiteUrl({ envName, workerName, env });
+  if (url) return url;
+  if (allowPlaceholders) return `https://${workerName}.example.com`;
+  console.error(`Cannot tell where ${workerName} is deployed, and a ZIP with a placeholder address must never be uploaded (the MCP URL cannot be changed later).\nRun 'npm run credentials' once, or set ${envName}=https://<host> and try again.`);
+  process.exit(1);
+};
 const products = [
-  { dir: "home", url: (await resolveSiteUrl({ envName: "ROOMWISE_URL", workerName: "roomwise" })) ?? "https://roomwise.example.com", demo: process.env.DEMO_URL_ROOMWISE },
-  { dir: "wedding", url: (await resolveSiteUrl({ envName: "AISLE_URL", workerName: "aisle" })) ?? "https://aisle.example.com", demo: process.env.DEMO_URL_AISLE },
+  { dir: "home", url: await lookup("ROOMWISE_URL", "roomwise"), demo: process.env.DEMO_URL_ROOMWISE, category: process.env.PLUGIN_CATEGORY_ROOMWISE ?? process.env.PLUGIN_CATEGORY },
+  { dir: "wedding", url: await lookup("AISLE_URL", "aisle"), demo: process.env.DEMO_URL_AISLE, category: process.env.PLUGIN_CATEGORY_AISLE ?? process.env.PLUGIN_CATEGORY },
 ];
 const out = fileURLToPath(new URL("../dist/plugins/", import.meta.url));
 await rm(out, { recursive: true, force: true });
@@ -25,7 +41,7 @@ for (const p of products) {
   const shotDir = `${app}plugin/assets`;
   const shots = await Promise.all((await readdir(shotDir).catch(() => [] as string[])).filter((f) => /^screenshot-\d+\.png$/.test(f)).sort().map((f) => readFile(`${shotDir}/${f}`)));
   const snapshot = JSON.parse(await readFile(`${app}plugin/tools.snapshot.json`, "utf8")) as { name: string }[];
-  const files = buildPluginFiles(spec, { publisher, email, siteUrl: p.url, demoUrl: p.demo, screenshots: shots });
+  const files = buildPluginFiles(p.category ? { ...spec, category: p.category } : spec, { publisher, email, siteUrl: p.url, demoUrl: p.demo, screenshots: shots });
   const zip = writeZip(files);
   const zipPath = `${out}${spec.name}-${spec.version}.zip`;
   await writeFile(zipPath, zip);

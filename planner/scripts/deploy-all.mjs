@@ -3,7 +3,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { ask, looksLikeAccountId, looksLikeToken } from "./cloudflare/prompt.mjs";
-import { loadCredentials, saveCredentials, verifyToken } from "./cloudflare/credentials.mjs";
+import { loadCredentials, loadProfile, saveCredentials, saveProfile, verifyToken } from "./cloudflare/credentials.mjs";
 
 const flags = process.argv.slice(2);
 const env = { ...process.env };
@@ -40,8 +40,11 @@ try {
     const yes = (await ask("Save these Cloudflare credentials for next time (token goes to your system keychain, not the repo)? [y/N]: ")).toLowerCase();
     if (yes === "y" || yes === "yes") { try { console.log(`Saved in ${saveCredentials({ token: env.CLOUDFLARE_API_TOKEN, accountId: env.CLOUDFLARE_ACCOUNT_ID })}.`); } catch (e) { console.error(`Could not save: ${e.message}`); } }
   }
+  const profile = loadProfile();
+  if (profile && !env.PUBLISHER_NAME && !env.CONTACT_EMAIL) { env.PUBLISHER_NAME = profile.publisher; env.CONTACT_EMAIL = profile.email; console.log(`Using the publisher name and email you saved earlier: ${profile.publisher}, ${profile.email}`); }
   await need("PUBLISHER_NAME", "Publisher name (must match your OpenAI verified identity): ", {});
   await need("CONTACT_EMAIL", "Public contact email: ", { valid: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), hint: "does not look like an email address." });
+  if (!dry) saveProfile({ publisher: env.PUBLISHER_NAME, email: env.CONTACT_EMAIL });
 } catch (e) { console.error(e.message); process.exit(1); }
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
@@ -49,5 +52,5 @@ const run = (script, args) => { const r = spawnSync(process.execPath, [here(scri
 
 run("./deploy.mjs", ["home", ...flags]);
 run("./deploy.mjs", ["wedding", ...flags]);
-run("./package-plugins.ts", []);
+run("./package-plugins.ts", dry ? ["--allow-placeholders"] : []);
 console.log(`\nDone${dry ? " (dry run: nothing was uploaded)" : ""}. The plugin ZIPs are in ${here("../dist/plugins/")}`);

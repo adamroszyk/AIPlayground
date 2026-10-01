@@ -9,7 +9,7 @@ export const PATTERNS = [
   ["Cloudflare API token", new RegExp("\\bcf" + "[a-z]t_[A-Za-z0-9]{20,}")],
   ["Cloudflare R2 secret access key (64 hex)", /\b[0-9a-f]{64}\b/],
   ["Bearer token", /Bearer\s+(?!<)[A-Za-z0-9._~+/-]{24,}/],
-  ["Token assigned to an environment variable", /\b(?:CLOUDFLARE_API_TOKEN|OPENAI_APPS_CHALLENGE\w*|API_TOKEN|SECRET_ACCESS_KEY)\s*[:=]\s*["']?(?![<$"'\s]|your|xxx|\.\.\.)[A-Za-z0-9._~+/-]{24,}/i],
+  ["Token assigned to an environment variable", /\b(?:CLOUDFLARE_API_TOKEN|OPENAI_APPS_CHALLENGE\w*|API_TOKEN|SECRET_ACCESS_KEY)\s*[:=]\s*["']?(?![<$"'\s]|your|xxx|\.\.\.)(?=[A-Za-z0-9._~+/-]*\d)[A-Za-z0-9._~+/-]{24,}/i],
   ["Private key", /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
   ["OpenAI-style secret key", /\bsk-[A-Za-z0-9_-]{20,}/],
   ["GitHub token", /\b(?:ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,})/],
