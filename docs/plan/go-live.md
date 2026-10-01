@@ -88,7 +88,7 @@ PLUGIN_CATEGORY_ROOMWISE="<exact category>" PLUGIN_CATEGORY_AISLE="<exact catego
 export DEMO_URL_ROOMWISE=... DEMO_URL_AISLE=...
 npm run package:plugins:release     # fails on any placeholder or missing demo URL
 ```
-Upload `planner/dist/plugins/roomwise-1.0.0.zip` and `aisle-seating-1.0.0.zip` in the Plugins dashboard. Reviewer credentials are not needed (no sign-in).
+Upload `roomwise-1.0.0.zip` and `aisle-seating-1.0.0.zip` in the Plugins dashboard. A real build is also copied to your Downloads folder (set `PLUGIN_ZIP_DIR` to choose another, or `--no-copy` to skip); builds with placeholder values are never copied. Reviewer credentials are not needed (no sign-in).
 
 ### 10. Legal review
 Have privacy and terms reviewed (they are templates written from the actual data flows: see `data` in each `site/content.ts`). Guest names are personal data about third parties.

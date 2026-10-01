@@ -1,8 +1,12 @@
 // Builds each plugin package (directory + ZIP), lints the ZIP itself, and fails on any error.
-// Usage: node scripts/package-plugins.ts [--release]
+// Usage: node scripts/package-plugins.ts [--release] [--allow-placeholders] [--no-copy]
+// A finished ZIP is also copied to your Downloads folder (or PLUGIN_ZIP_DIR). Placeholder builds are never copied.
 //   PUBLISHER_NAME, CONTACT_EMAIL, ROOMWISE_URL, AISLE_URL, DEMO_URL_ROOMWISE, DEMO_URL_AISLE (see docs/plan/go-live.md)
 import { fileURLToPath } from "node:url";
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { buildPluginFiles, lintPlugin, readZip, writeZip, type PluginSpec } from "@planner/plugin-kit";
 // @ts-ignore plain JS helper
 import { resolveSiteUrl } from "./cloudflare/cf.mjs";
@@ -34,6 +38,9 @@ const out = fileURLToPath(new URL("../dist/plugins/", import.meta.url));
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 
+// Real builds are copied somewhere easy to find. Never for placeholder builds (tests, dry runs): an unusable ZIP must not land in Downloads.
+const copyTo = allowPlaceholders || process.argv.includes("--no-copy") ? null : (process.env.PLUGIN_ZIP_DIR ?? path.join(os.homedir(), "Downloads"));
+const copied: string[] = [];
 let failed = false;
 for (const p of products) {
   const app = fileURLToPath(new URL(`../apps/${p.dir}/`, import.meta.url));
@@ -53,5 +60,10 @@ for (const p of products) {
   for (const e of errors) console.log(`  ERROR: ${e}`);
   if (errors.length === 0) console.log(`  lint: ok${release ? " (release mode)" : " (dev mode: placeholders are warnings)"}`);
   failed ||= errors.length > 0;
+  if (copyTo && errors.length === 0) {
+    if (existsSync(copyTo)) { const dest = path.join(copyTo, path.basename(zipPath)); await copyFile(zipPath, dest); copied.push(dest); }
+    else console.log(`  (not copied: ${copyTo} does not exist; set PLUGIN_ZIP_DIR to choose another folder)`);
+  }
 }
+if (copied.length) console.log(`\nCopied to your Downloads folder, ready to upload:\n${copied.map((c) => `  ${c}`).join("\n")}`);
 process.exit(failed ? 1 : 0);
