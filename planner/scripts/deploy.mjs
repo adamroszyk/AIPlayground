@@ -5,10 +5,11 @@
 //   ROOMWISE_URL / AISLE_URL                      https://<hostname> for the product being deployed
 //   PUBLISHER_NAME, CONTACT_EMAIL                 shown on the legal pages; must match your OpenAI publisher identity
 //   OPENAI_APPS_CHALLENGE_ROOMWISE / _AISLE       token from the OpenAI dashboard (optional on the first deploy)
+import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import { COST_MODEL, limitsFromEnv } from "../packages/core/src/usage.ts";
-import { resolveSiteUrl } from "./lib/cf.mjs";
+import { resolveSiteUrl } from "./cloudflare/cf.mjs";
 
 const [app, ...flags] = process.argv.slice(2);
 const dry = flags.includes("--dry-run"), skipSmoke = flags.includes("--skip-smoke");
@@ -28,7 +29,7 @@ if (!dry && !process.env.CLOUDFLARE_API_TOKEN) problems.push("CLOUDFLARE_API_TOK
 if (problems.length && !dry) { console.error("Cannot deploy:\n - " + problems.join("\n - ")); process.exit(1); }
 if (problems.length) console.warn("Dry run, ignoring:\n - " + problems.join("\n - ") + "\n");
 
-const dir = new URL(`../apps/${app}/`, import.meta.url).pathname;
+const dir = fileURLToPath(new URL(`../apps/${app}/`, import.meta.url));
 const sh = (cmd, args, opt = {}) => {
   console.log(`\n$ ${[cmd, ...args].join(" ")}`);
   const r = spawnSync(cmd, args, { stdio: opt.input ? ["pipe", "inherit", "inherit"] : "inherit", encoding: "utf8", cwd: opt.cwd ?? dir, input: opt.input, env: { ...process.env, ...opt.env } });
@@ -36,7 +37,7 @@ const sh = (cmd, args, opt = {}) => {
 };
 
 // 1. build with the real hostname and publisher name baked into canonical URLs and legal pages
-sh("npm", ["run", "build", "-w", P.pkg], { cwd: new URL("..", import.meta.url).pathname, env: { SITE_URL: siteUrl || "https://placeholder.example.com", PUBLISHER_NAME: process.env.PUBLISHER_NAME ?? "", CONTACT_EMAIL: process.env.CONTACT_EMAIL ?? "" } });
+sh("npm", ["run", "build", "-w", P.pkg], { cwd: fileURLToPath(new URL("..", import.meta.url)), env: { SITE_URL: siteUrl || "https://placeholder.example.com", PUBLISHER_NAME: process.env.PUBLISHER_NAME ?? "", CONTACT_EMAIL: process.env.CONTACT_EMAIL ?? "" } });
 
 // 2. deploy config = the committed config + this hostname. Binding ids are left out: wrangler provisions KV and D1 on first deploy.
 const base = JSON.parse(await readFile(`${dir}wrangler.jsonc`, "utf8"));
@@ -66,5 +67,5 @@ sh("npx", ["wrangler", "d1", "migrations", "apply", "DB", "--remote", "-c", "wra
 const token = process.env[P.token];
 if (token) sh("npx", ["wrangler", "secret", "put", "OPENAI_APPS_CHALLENGE", "-c", "wrangler.deploy.json"], { input: token });
 else console.log(`\n${P.token} not set: /.well-known/openai-apps-challenge stays 404 until you add it (OpenAI shows the token after you start the domain verification).`);
-if (!skipSmoke) sh("node", ["scripts/smoke.mjs", siteUrl, app, ...(token ? [`--challenge=${token}`] : [])], { cwd: new URL("..", import.meta.url).pathname });
+if (!skipSmoke) sh("node", ["scripts/smoke.mjs", siteUrl, app, ...(token ? [`--challenge=${token}`] : [])], { cwd: fileURLToPath(new URL("..", import.meta.url)) });
 console.log(`\nDeployed ${base.name} to ${siteUrl}`);

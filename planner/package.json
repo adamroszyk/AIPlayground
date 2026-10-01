@@ -31,10 +31,11 @@
     "package:plugins:release": "node scripts/package-plugins.ts --release",
     "snapshot:tools": "node scripts/snapshot-tools.mjs",
     "test:review": "node --test tests/review-cases.test.mjs",
-    "test:units": "npm test -w @planner/engine -w @planner/core -w @planner/plugin-kit && node --test scripts/lib/cf.test.mjs",
+    "test:units": "npm test -w @planner/engine -w @planner/core -w @planner/plugin-kit && node --test scripts/cloudflare/cf.test.mjs",
     "build:all": "npm run build -w @planner/home -w @planner/wedding",
     "test:e2e": "node --test tests/home.e2e.test.mjs tests/wedding.e2e.test.mjs tests/review-cases.test.mjs tests/smoke.local.test.mjs tests/limits.e2e.test.mjs && node tests/widgets.e2e.mjs && node tests/home-editor.e2e.mjs && node tests/wedding-editor.e2e.mjs",
     "test:all": "npm run typecheck && npm run test:units && npm run build:all && node tests/landing.e2e.mjs && npm run test:e2e && npm run package:plugins",
-    "demo:video": "node scripts/demo-video.mjs"
+    "demo:video": "node scripts/demo-video.mjs",
+    "deploy": "node scripts/deploy-all.mjs"
   }
 }

@@ -1,10 +1,11 @@
 // Builds each plugin package (directory + ZIP), lints the ZIP itself, and fails on any error.
 // Usage: node scripts/package-plugins.ts [--release]
 //   PUBLISHER_NAME, CONTACT_EMAIL, ROOMWISE_URL, AISLE_URL, DEMO_URL_ROOMWISE, DEMO_URL_AISLE (see docs/plan/go-live.md)
+import { fileURLToPath } from "node:url";
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { buildPluginFiles, lintPlugin, readZip, writeZip, type PluginSpec } from "@planner/plugin-kit";
 // @ts-ignore plain JS helper
-import { resolveSiteUrl } from "./lib/cf.mjs";
+import { resolveSiteUrl } from "./cloudflare/cf.mjs";
 
 const release = process.argv.includes("--release");
 const publisher = process.env.PUBLISHER_NAME ?? "[Publisher name]";
@@ -13,13 +14,13 @@ const products = [
   { dir: "home", url: (await resolveSiteUrl({ envName: "ROOMWISE_URL", workerName: "roomwise" })) ?? "https://roomwise.example.com", demo: process.env.DEMO_URL_ROOMWISE },
   { dir: "wedding", url: (await resolveSiteUrl({ envName: "AISLE_URL", workerName: "aisle" })) ?? "https://aisle.example.com", demo: process.env.DEMO_URL_AISLE },
 ];
-const out = new URL("../dist/plugins/", import.meta.url).pathname;
+const out = fileURLToPath(new URL("../dist/plugins/", import.meta.url));
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 
 let failed = false;
 for (const p of products) {
-  const app = new URL(`../apps/${p.dir}/`, import.meta.url).pathname;
+  const app = fileURLToPath(new URL(`../apps/${p.dir}/`, import.meta.url));
   const { spec } = (await import(`${app}plugin/spec.ts`)) as { spec: PluginSpec };
   const shotDir = `${app}plugin/assets`;
   const shots = await Promise.all((await readdir(shotDir).catch(() => [] as string[])).filter((f) => /^screenshot-\d+\.png$/.test(f)).sort().map((f) => readFile(`${shotDir}/${f}`)));

@@ -1,5 +1,6 @@
 // Records walkthrough videos of both products against the real servers: node scripts/demo-video.mjs [home|wedding]
 // Output: dist/demo/<name>-demo.webm (+ .mp4 when ffmpeg can encode H.264). No audio; captions are drawn on screen.
+import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { build } from "esbuild";
 import http from "node:http";
@@ -8,9 +9,9 @@ import { spawnSync } from "node:child_process";
 import { startWorker } from "../tests/helpers.mjs";
 
 const only = process.argv[2];
-const OUT = new URL("../dist/demo/", import.meta.url).pathname;
+const OUT = fileURLToPath(new URL("../dist/demo/", import.meta.url));
 await mkdir(OUT, { recursive: true });
-const hostJs = (await build({ entryPoints: [new URL("./demo/host.ts", import.meta.url).pathname], bundle: true, write: false, format: "iife", platform: "browser", target: "es2022" })).outputFiles[0].text;
+const hostJs = (await build({ entryPoints: [fileURLToPath(new URL("./demo/host.ts", import.meta.url))], bundle: true, write: false, format: "iife", platform: "browser", target: "es2022" })).outputFiles[0].text;
 const hostHtml = await readFile(new URL("./demo/host.html", import.meta.url), "utf8");
 const web = http.createServer((req, res) => (req.url === "/host.js" ? res.writeHead(200, { "content-type": "text/javascript" }).end(hostJs) : res.writeHead(200, { "content-type": "text/html" }).end(hostHtml))).listen(4182);
 
