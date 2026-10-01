@@ -8,9 +8,28 @@ const challenge = rest.find((a) => a.startsWith("--challenge="))?.slice(12);
 const { fixtures } = await import(`../apps/${app}/plugin/fixtures.ts`);
 const { spec } = await import(`../apps/${app}/plugin/spec.ts`);
 
+const waitSeconds = Number((rest.find((a) => a.startsWith("--wait=")) ?? "").slice(7)) || 0;
 let fails = 0;
 const ok = (c, m) => { console.log(`${c ? "PASS" : "FAIL"} ${m}`); if (!c) fails++; };
 const get = (p, init) => fetch(base + p, { redirect: "manual", ...init });
+
+// 0. A brand-new workers.dev address can take a minute or two to start answering. Wait for the Worker itself (the CORS preflight is
+//    answered by our code, not by static files), and say plainly if it never does.
+if (waitSeconds) {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const t0 = Date.now();
+  let last = "no answer yet", live = false, nextNote = 0;
+  while (Date.now() - t0 < waitSeconds * 1000) {
+    try { const r = await fetch(`${base}/mcp`, { method: "OPTIONS" }); if (r.status === 204) { live = true; break; } last = `HTTP ${r.status}`; } catch (e) { last = String(e.cause?.code ?? e.message); }
+    if (Date.now() - t0 >= nextNote) { console.log(`waiting for ${base} to start answering (${last})...`); nextNote += 15000; }
+    await sleep(5000);
+  }
+  if (!live) {
+    console.error(`\nThe Worker is still not answering after ${waitSeconds} s (last result: ${last}).\nThis is not a failure of the app's checks: the request is not reaching it. Things to check:\n  1. Open ${base}/ in a browser.\n  2. Cloudflare dashboard > Workers & Pages > ${new URL(base).hostname.split(".")[0]} > Settings > Domains & Routes: the workers.dev route must be enabled.\n  3. Run: curl -i -X OPTIONS ${base}/mcp   (a working Worker answers 204 with access-control headers)\nThen rerun: node scripts/smoke.mjs ${base} ${app}`);
+    process.exit(1);
+  }
+  console.log(`${base} is answering after ${Math.round((Date.now() - t0) / 1000)} s`);
+}
 
 // 1. site, legal pages, editor shell, headers
 for (const p of ["/", "/privacy/", "/terms/", "/support/", "/app/", "/robots.txt", "/sitemap.xml", "/favicon.svg"]) {

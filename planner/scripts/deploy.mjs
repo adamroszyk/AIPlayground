@@ -59,7 +59,7 @@ const perMonth = (limits.requestsPerDay * COST_MODEL.worstCpuMsPerRequest + limi
 if (perMonth > COST_MODEL.includedCpuMsPerMonth) { console.error(`These limits (${limits.requestsPerDay} requests and ${limits.solvesPerDay} solves per day) could use ${(perMonth / 1e6).toFixed(1)}M CPU ms a month in the worst case, over the ${COST_MODEL.includedCpuMsPerMonth / 1e6}M included in the $5 plan. Lower them, or accept possible overage charges by editing COST_MODEL deliberately.`); process.exit(1); }
 const config = {
   ...base,
-  ...(onWorkersDev ? { workers_dev: true, routes: [] } : { routes: host ? [{ pattern: host, custom_domain: true }] : [] }),
+  ...(onWorkersDev ? { workers_dev: true, preview_urls: false, routes: [] } : { routes: host ? [{ pattern: host, custom_domain: true }] : [] }),
   // Daily circuit breaker: see docs/plan/cost-controls.md. Override with DAILY_REQUEST_LIMIT / DAILY_SOLVE_LIMIT only knowingly.
   vars: { ...(base.vars ?? {}), PUBLIC_BASE_URL: siteUrl, DAILY_REQUEST_LIMIT: String(limits.requestsPerDay), DAILY_SOLVE_LIMIT: String(limits.solvesPerDay) },
   limits: { cpu_ms: COST_MODEL.cpuMsLimitPerInvocation }, // per-invocation CPU cap; the solver needs the Workers Paid plan (free plan allows 10 ms)
@@ -77,5 +77,5 @@ sh("npx", ["wrangler", "d1", "migrations", "apply", "DB", "--remote", "-c", "wra
 const token = process.env[P.token];
 if (token) sh("npx", ["wrangler", "secret", "put", "OPENAI_APPS_CHALLENGE", "-c", "wrangler.deploy.json"], { input: token });
 else console.log(`\n${P.token} not set: /.well-known/openai-apps-challenge stays 404 until you add it (OpenAI shows the token after you start the domain verification).`);
-if (!skipSmoke) sh("node", ["scripts/smoke.mjs", siteUrl, app, ...(token ? [`--challenge=${token}`] : [])], { cwd: fileURLToPath(new URL("..", import.meta.url)) });
+if (!skipSmoke) sh("node", ["scripts/smoke.mjs", siteUrl, app, "--wait=240", ...(token ? [`--challenge=${token}`] : [])], { cwd: fileURLToPath(new URL("..", import.meta.url)) });
 console.log(`\nDeployed ${base.name} to ${siteUrl}`);
