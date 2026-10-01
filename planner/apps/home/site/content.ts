@@ -52,6 +52,7 @@ export const home: ProductConfig = {
     { q: "Can I use it with ChatGPT?", a: "It is being prepared for the ChatGPT plugin directory. Early-access members will hear first. Until then, access is through early access only." },
     { q: "What happens to my data?", a: "Plans are stored at private links and deleted 90 days after you last edit them, or sooner on request. See the privacy policy for details." },
   ],
+  appPath: "/app/",
   headingFont: `"Avenir Next","Segoe UI",system-ui,sans-serif`,
   tokens: {
     light: { bg: "#faf8f4", fg: "#1f2a2b", muted: "#5a6868", line: "#e6e0d6", card: "#fffdf9", accent: "#1f6f6a", "accent-fg": "#ffffff", accent2: "#c9633a", ok: "#2c7f52", err: "#b4412f", floor: "#f1ece2", rug: "#e3d8c6", item: "#cfd9d6", "item-line": "#7d9490", item2: "#b9c9c5" },

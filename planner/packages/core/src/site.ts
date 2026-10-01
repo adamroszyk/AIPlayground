@@ -1,4 +1,5 @@
 import { cp, mkdir, rm, writeFile } from "node:fs/promises";
+import { build as esbuild } from "esbuild";
 
 export interface Faq { q: string; a: string }
 export interface Item { title: string; body: string }
@@ -31,6 +32,8 @@ export interface ProductConfig {
   data: { planData: string[]; planRetentionDays: number; thirdPartyNote?: string };
   /** Product-specific disclaimer used in terms. */
   disclaimer: string;
+  /** Where the in-browser planner lives; when set, the landing page links to it. */
+  appPath?: string;
 }
 
 export interface SiteEnv {
@@ -58,7 +61,7 @@ header.top .wrap{display:flex;align-items:center;gap:20px;padding-top:14px;paddi
 header.top nav{display:flex;gap:18px}header.top nav a{color:var(--muted);text-decoration:none;font-size:15px}header.top nav a:hover{color:var(--fg)}header.top nav a.btn,header.top nav a.btn:hover{color:var(--accent-fg)}
 @media(max-width:640px){header.top nav a:not(.cta){display:none}}
 .btn{display:inline-block;padding:12px 22px;border-radius:999px;background:var(--accent);color:var(--accent-fg);font-weight:600;text-decoration:none;border:0;cursor:pointer;font-size:16px}
-.btn:hover{filter:brightness(1.08)}.btn.small{padding:8px 16px;font-size:14px}
+.btn:hover{filter:brightness(1.08)}.btn.small{padding:8px 16px;font-size:14px}.btn.secondary{background:transparent;color:var(--fg);border:1px solid var(--line)}.try{margin:14px 0 0}
 .hero{display:grid;grid-template-columns:1.05fr 1fr;gap:48px;align-items:center;padding:64px 0 40px}
 @media(max-width:860px){.hero{grid-template-columns:1fr;padding-top:36px;gap:28px}}
 .eyebrow{display:inline-block;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:14px}
@@ -163,6 +166,7 @@ export function renderLanding(cfg: ProductConfig, env: SiteEnv): string {
 <p class="lead">${esc(cfg.sub)}</p>
 ${signupForm("hero")}
 <p class="fine">Early access. One email when it opens, nothing else. <a href="/privacy/">Privacy</a></p>
+${cfg.appPath ? `<p class="try"><a class="btn secondary" href="${cfg.appPath}">Try the planner in your browser</a></p>` : ""}
 </div>
 <figure class="hero-art" aria-label="Example output">${cfg.heroSvg}<figcaption>${esc(cfg.heroCaption)}</figcaption></figure>
 </section>
@@ -195,6 +199,12 @@ ${signupForm("hero")}
       { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: cfg.faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) },
     ],
   });
+}
+
+/** The page that hosts an editor bundle: same header and footer as the landing site. */
+export function renderApp(cfg: ProductConfig, env: SiteEnv, o: { title: string; description: string; path: string; bodyHtml: string; script: string; css: string }): string {
+  const html = shell(cfg, env, { title: o.title, description: o.description, path: o.path, noindex: true, body: o.bodyHtml });
+  return html.replace("</head>", `<link rel="stylesheet" href="${o.css}">\n</head>`).replace("</body>", `<script src="${o.script}" defer></script>\n</body>`);
 }
 
 const contactHtml = (env: SiteEnv) => (env.contactEmail ? `<a href="mailto:${esc(env.contactEmail)}">${esc(env.contactEmail)}</a>` : "<strong>[contact email not set]</strong>");
@@ -332,3 +342,15 @@ export function envFromProcess(defaults: { siteUrl: string }): SiteEnv {
 }
 
 export { cp };
+
+export interface EditorBuild { entry: string; title: string; description: string; editorCss: string; noscript: string }
+
+/** Bundles an editor and writes /app/index.html, /app/editor.js and /app/editor.css next to the landing site. */
+export async function buildEditor(cfg: ProductConfig, env: SiteEnv, outDir: string, o: EditorBuild): Promise<void> {
+  await mkdir(`${outDir}/app`, { recursive: true });
+  const bundle = await esbuild({ entryPoints: [o.entry], bundle: true, write: false, format: "iife", minify: true, target: "es2022", platform: "browser", logLevel: "warning" });
+  await writeFile(`${outDir}/app/editor.js`, bundle.outputFiles[0]!.text);
+  await writeFile(`${outDir}/app/editor.css`, o.editorCss);
+  const body = `<main class="wrap"><div id="app" class="editor"><noscript><p class="legal">${esc(o.noscript)}</p></noscript></div></main>`;
+  await writeFile(`${outDir}/app/index.html`, renderApp(cfg, env, { title: o.title, description: o.description, path: "/app/", bodyHtml: body, script: "/app/editor.js", css: "/app/editor.css" }));
+}

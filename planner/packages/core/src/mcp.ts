@@ -5,9 +5,6 @@ export const CREATES_PLAN = { readOnlyHint: false, destructiveHint: false, idemp
 
 export const fail = (message: string) => ({ isError: true as const, content: [{ type: "text" as const, text: message }] });
 
-export const UNIT_TO_INCHES = { in: 1, ft: 12, cm: 1 / 2.54, m: 100 / 2.54 } as const;
-export type Unit = keyof typeof UNIT_TO_INCHES;
-export const toInches = (n: number, unit: Unit) => Math.round(n * UNIT_TO_INCHES[unit] * 100) / 100;
-export const fromInches = (n: number, unit: Unit) => Math.round((n / UNIT_TO_INCHES[unit]) * 100) / 100;
+export { UNIT_TO_INCHES, toInches, fromInches, type Unit } from "@planner/engine";
 
 export const FACING: Record<number, string> = { 0: "south", 90: "west", 180: "north", 270: "east" };

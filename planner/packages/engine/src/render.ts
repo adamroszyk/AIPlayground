@@ -2,6 +2,10 @@ import { footprint, frontVector, swingZone, type Piece, type Placement, type Roo
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+/** Pixels per inch and margin used by `layoutToSvg`, for converting pointer positions back to inches. */
+export const PLAN_SCALE = 3;
+export const PLAN_MARGIN = 40;
+
 export interface RenderOptions {
   /** Pixels per inch. */
   scale?: number;
@@ -16,7 +20,7 @@ export interface RenderOptions {
  * Contains no user markup: every string is escaped.
  */
 export function layoutToSvg(room: Room, pieces: Piece[], placements: Placement[], o: RenderOptions = {}): string {
-  const S = o.scale ?? 3, M = 40;
+  const S = o.scale ?? PLAN_SCALE, M = PLAN_MARGIN;
   const W = room.width * S, H = room.length * S;
   const vbW = W + M * 2, vbH = H + M * 2 + (o.report ? 44 : 0);
   const X = (x: number) => M + x * S, Y = (y: number) => M + y * S;
@@ -42,7 +46,7 @@ export function layoutToSvg(room: Room, pieces: Piece[], placements: Placement[]
     const kind = p.kind ?? "generic";
     const [fx, fy] = frontVector(pl.rot);
     const w = (b.x1 - b.x0) * S, h = (b.y1 - b.y0) * S, x = X(b.x0), y = Y(b.y0);
-    out.push(`<g class="rp-piece rp-${kind}${bad ? " rp-bad" : ""}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(6, w / 6, h / 6)}"/>`);
+    out.push(`<g class="rp-piece rp-${kind}${bad ? " rp-bad" : ""}" data-id="${esc(p.id)}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(6, w / 6, h / 6)}"/>`);
     // front marker: a short bar on the front edge
     const bar = 4;
     const mx = x + w / 2 + (fx * (w / 2 - bar / 2)), my = y + h / 2 + (fy * (h / 2 - bar / 2));
@@ -83,7 +87,8 @@ export const PLAN_CSS = `.rp-plan{width:100%;height:auto;font:12px system-ui,san
 .rp-front{fill:var(--rp-item-line,#7d9490)}
 .rp-piece text{fill:var(--rp-text,#2a3a3b);font-size:11px;pointer-events:none}
 .rp-dim{fill:var(--rp-muted,#5a6868);font-size:13px}
-.rp-badge{fill:#2c7f52}.rp-badge-bad{fill:#b4412f}.rp-badge-t{fill:#fff;font-weight:700;font-size:14px}`;
+.rp-badge{fill:#2c7f52}.rp-badge-bad{fill:#b4412f}.rp-badge-t{fill:#fff;font-weight:700;font-size:14px}
+.rp-wall,.rp-floor,.rp-swing,.rp-door,.rp-window,.rp-dim,.rp-badge,.rp-badge-t,.rp-front{pointer-events:none}`;
 
 // ---------------------------------------------------------------------------------------------
 // Seating chart renderer
@@ -124,25 +129,25 @@ export function seatingToSvg(tables: Table[], guests: Guest[], seats: Record<str
   const W = Math.max(cols * cell, ...heads.map((t) => headW(t) + 40));
   const headBlock = heads.length * HEAD_ROW;
   const H = headBlock + rows * cell + (o.report ? 50 : 0);
-  const seat = (g: Guest | undefined, x: number, y: number) =>
+  const seat = (g: Guest | undefined, x: number, y: number, tid: string, k: number) =>
     g
-      ? `<g><title>${esc(g.name)}</title><circle class="rp-seat ${cls(g)}${o.highlight?.includes(g.id) ? " rp-bad-seat" : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12"/><text class="rp-init" x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle">${esc(initials(g.name))}</text></g>`
-      : `<circle class="rp-seat rp-empty" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12"/>`;
+      ? `<g class="rp-seatg" data-guest="${esc(g.id)}" data-table="${esc(tid)}" data-seat="${k}"><title>${esc(g.name)}</title><circle class="rp-seat ${cls(g)}${o.highlight?.includes(g.id) ? " rp-bad-seat" : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12"/><text class="rp-init" x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle">${esc(initials(g.name))}</text></g>`
+      : `<circle class="rp-seat rp-empty" data-table="${esc(tid)}" data-seat="${k}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12"/>`;
   const out: string[] = [];
   heads.forEach((t, i) => {
     const cx = W / 2, cy = 26 + i * HEAD_ROW, w = headW(t), ids = seats[t.id] ?? [];
-    out.push(`<g class="rp-table rp-head"><rect class="rp-tbl" x="${cx - w / 2}" y="${cy - 16}" width="${w}" height="32" rx="8"/>`);
-    for (let k = 0; k < t.capacity; k++) out.push(seat(byId.get(ids[k] ?? ""), cx - w / 2 + (w / t.capacity) * (k + 0.5), cy + 32));
+    out.push(`<g class="rp-table rp-head" data-table="${esc(t.id)}"><rect class="rp-tbl" x="${cx - w / 2}" y="${cy - 16}" width="${w}" height="32" rx="8"/>`);
+    for (let k = 0; k < t.capacity; k++) out.push(seat(byId.get(ids[k] ?? ""), cx - w / 2 + (w / t.capacity) * (k + 0.5), cy + 32, t.id, k));
     out.push(`<text class="rp-tname" x="${cx}" y="${cy + 4}" text-anchor="middle">${esc(t.name ?? "Head table")}</text></g>`);
   });
   const gridX0 = (W - cols * cell) / 2;
   regular.forEach((t, i) => {
     const cx = gridX0 + (i % cols) * cell + cell / 2, cy = headBlock + Math.floor(i / cols) * cell + cell / 2;
     const ids = seats[t.id] ?? [];
-    out.push(`<g class="rp-table"><circle class="rp-tbl" cx="${cx}" cy="${cy}" r="${ring * 0.62}"/>`);
+    out.push(`<g class="rp-table" data-table="${esc(t.id)}"><circle class="rp-tbl" cx="${cx}" cy="${cy}" r="${ring * 0.62}"/>`);
     for (let k = 0; k < t.capacity; k++) {
       const a = (k / t.capacity) * Math.PI * 2 - Math.PI / 2;
-      out.push(seat(byId.get(ids[k] ?? ""), cx + Math.cos(a) * ring * 0.95, cy + Math.sin(a) * ring * 0.95));
+      out.push(seat(byId.get(ids[k] ?? ""), cx + Math.cos(a) * ring * 0.95, cy + Math.sin(a) * ring * 0.95, t.id, k));
     }
     out.push(`<text class="rp-tname" x="${cx}" y="${cy - 2}" text-anchor="middle">${esc(t.name ?? t.id)}</text><text class="rp-tcount" x="${cx}" y="${cy + 14}" text-anchor="middle">${ids.length}/${t.capacity}</text></g>`);
   });
@@ -162,4 +167,5 @@ export const SEATING_CSS = `.rp-seating{width:100%;height:auto;font:12px system-
 .rp-legend .rp-g1{background:var(--rp-g1,#7b2d5b)}.rp-legend .rp-g2{background:var(--rp-g2,#d98aa6)}.rp-legend .rp-g3{background:var(--rp-g3,#3f8f8a)}.rp-legend .rp-g4{background:var(--rp-g4,#c99a3e)}.rp-legend .rp-g5{background:var(--rp-g5,#6b7fb3)}
 .rp-init{fill:#fff;font-size:10px;font-weight:700;pointer-events:none}
 .rp-tname{fill:var(--rp-text,#2a2230);font-weight:600;font-size:13px}.rp-tcount{fill:var(--rp-muted,#675b6c);font-size:12px}
-.rp-badge{fill:#2c7f52}.rp-badge-bad{fill:#b4412f}.rp-badge-t{fill:#fff;font-weight:700;font-size:14px}`;
+.rp-badge{fill:#2c7f52}.rp-badge-bad{fill:#b4412f}.rp-badge-t{fill:#fff;font-weight:700;font-size:14px}
+.rp-badge,.rp-badge-t,.rp-tname,.rp-tcount,.rp-init{pointer-events:none}`;

@@ -40,7 +40,7 @@ export default {
     if (pathname === "/.well-known/openai-apps-challenge") return handleChallenge(env.OPENAI_APPS_CHALLENGE);
     if (pathname.startsWith("/p/")) {
       // The editor shell is the same for every plan; it reads the id from the URL and the manage token from the #fragment.
-      const shell = await env.ASSETS.fetch(new Request(new URL("/app/index.html", url), req));
+      const shell = await env.ASSETS.fetch(new Request(new URL("/app/", url), { method: "GET", headers: req.headers }));
       const headers = new Headers(shell.headers);
       headers.set("referrer-policy", "no-referrer");
       headers.set("cache-control", "no-store");
