@@ -1,5 +1,6 @@
 // Builds each plugin package (directory + ZIP), lints the ZIP itself, and fails on any error.
 // Usage: node scripts/package-plugins.ts [--release] [--allow-placeholders] [--no-copy]
+// PLUGIN_OUT_DIR changes where the build is written (tests use it so parallel runs never share a folder).
 // A finished ZIP is also copied to your Downloads folder (or PLUGIN_ZIP_DIR). Placeholder builds are never copied.
 //   PUBLISHER_NAME, CONTACT_EMAIL, ROOMWISE_URL, AISLE_URL, DEMO_URL_ROOMWISE, DEMO_URL_AISLE (see docs/plan/go-live.md)
 import { fileURLToPath } from "node:url";
@@ -35,7 +36,7 @@ const products = [
   { dir: "home", url: await lookup("ROOMWISE_URL", "roomwise"), demo: process.env.DEMO_URL_ROOMWISE ?? demoUrls.roomwise, category: process.env.PLUGIN_CATEGORY_ROOMWISE ?? process.env.PLUGIN_CATEGORY },
   { dir: "wedding", url: await lookup("AISLE_URL", "aisle"), demo: process.env.DEMO_URL_AISLE ?? demoUrls.aisle, category: process.env.PLUGIN_CATEGORY_AISLE ?? process.env.PLUGIN_CATEGORY },
 ];
-const out = fileURLToPath(new URL("../dist/plugins/", import.meta.url));
+const out = (process.env.PLUGIN_OUT_DIR ?? fileURLToPath(new URL("../dist/plugins/", import.meta.url))).replace(/\/?$/, "/");
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 

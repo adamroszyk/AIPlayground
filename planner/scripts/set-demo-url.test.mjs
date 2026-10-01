@@ -7,10 +7,11 @@ import { fileURLToPath } from "node:url";
 
 const cwd = fileURLToPath(new URL("..", import.meta.url));
 const home = mkdtempSync(`${tmpdir()}/demo-`);
-const base = { PATH: process.env.PATH, HOME: home };
+const OUT = mkdtempSync(`${tmpdir()}/out-`) + "/";
+const base = { PATH: process.env.PATH, HOME: home, PLUGIN_OUT_DIR: OUT };
 const setUrl = (...args) => spawnSync("node", ["scripts/set-demo-url.mjs", ...args, "--no-check"], { cwd, env: base, encoding: "utf8" });
 const pack = (env = {}) => spawnSync("node", ["scripts/package-plugins.ts", "--no-copy"], { cwd, env: { ...base, PUBLISHER_NAME: "Acme Ltd", CONTACT_EMAIL: "help@acme.dev", ROOMWISE_URL: "https://roomwise.acme.workers.dev", AISLE_URL: "https://aisle.acme.workers.dev", ...env }, encoding: "utf8" });
-const manifest = (zip) => JSON.parse(spawnSync("unzip", ["-p", `${cwd}dist/plugins/${zip}`, "plugin.json"], { encoding: "utf8" }).stdout);
+const manifest = (zip) => JSON.parse(spawnSync("unzip", ["-p", `${OUT}${zip}`, "plugin.json"], { encoding: "utf8" }).stdout);
 
 test("rejects links that are not usable by a signed-out reviewer", () => {
   assert.match(setUrl("roomwise", "http://example.org/v").stderr, /must start with https/);
