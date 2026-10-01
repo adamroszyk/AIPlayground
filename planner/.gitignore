@@ -3,3 +3,4 @@ dist/
 .wrangler/
 tests/.shots/
 apps/*/src/widget.generated.ts
+wrangler.deploy.json

@@ -1,9 +1,9 @@
 import { spawn, spawnSync } from "node:child_process";
 
-export function startWorker(dir, port, inspector) {
+export function startWorker(dir, port, inspector, extra = []) {
   // Apply D1 migrations to the local database first (idempotent).
   spawnSync("npx", ["wrangler", "d1", "migrations", "apply", "DB", "--local"], { cwd: dir, input: "y\n", stdio: ["pipe", "ignore", "ignore"] });
-  const p = spawn("npx", ["wrangler", "dev", "--local", "--port", String(port), "--inspector-port", String(inspector)], { cwd: dir, stdio: "ignore", detached: true });
+  const p = spawn("npx", ["wrangler", "dev", "--local", "--port", String(port), "--inspector-port", String(inspector), ...extra], { cwd: dir, stdio: "ignore", detached: true });
   const stop = () => { try { process.kill(-p.pid, "SIGKILL"); } catch {} };
   process.on("exit", stop);
   return { base: `http://127.0.0.1:${port}`, stop, ready: async () => {

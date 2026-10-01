@@ -1,6 +1,6 @@
 # App generation plan: Home room planner + Wedding planner
 
-Status: living document, updated every loop pass. Last updated 2026-10-01.
+Status: living document, updated every loop pass. Last updated 2026-10-01. P0 to P4 are built and tested; P5 deploy tooling is built; the go-live steps that need your accounts are in `go-live.md`.
 Scope per your instruction: focus on **home redesign** and **wedding planner**; order of work **landing page → MVP → vertical slice**, then plugin integration, then a live production test.
 
 Working names (change in one config file each): **Roomwise** (home) and **Aisle** (wedding). Collision/trademark checks are not done.
@@ -9,7 +9,7 @@ Working names (change in one config file each): **Roomwise** (home) and **Aisle*
 
 | Decision | Choice | Why |
 |---|---|---|
-| Hosting | **Cloudflare Workers** (static assets + Worker + KV) | Verified here: the MCP server runs in the real Workers runtime (`workerd`) through the web-standard handler. One deploy serves site, `/mcp`, `/.well-known/openai-apps-challenge`, and storage; DNS and TLS in the same account. Vercel is the fallback |
+| Hosting | **Cloudflare Workers** (static assets + Worker + D1 for plans, KV for the waitlist) | Verified here: the MCP server runs in the real Workers runtime (`workerd`) through the web-standard handler. One deploy serves site, `/mcp`, `/.well-known/openai-apps-challenge`, and storage; DNS and TLS in the same account. Vercel is the fallback |
 | Repo | New npm workspace `planner/` with `packages/core`, `packages/engine`, `apps/home`, `apps/wedding` | Two products, one shared engine and site/MCP kit |
 | Plugins | **Two plugins**, two hostnames | OpenAI allows **one MCP server per plugin**; listings need distinct names; the domain-verification token is per hostname |
 | Format | Agent Plugins layout (root `plugin.json` with `extensions.com.openai`) | Portable; matches the doc's first example |
@@ -87,7 +87,7 @@ Working names (change in one config file each): **Roomwise** (home) and **Aisle*
 
 - **Collected:** early-access email; plans created (room dimensions and furniture lists; wedding guest names, groups and rules); host request logs (IP, timestamp).
 - **Not collected:** accounts, payment details, ad identifiers; no analytics in MVP.
-- **Retention:** waitlist until you ask for deletion; plans **90 days after last edit** via KV TTL; every plan has a **delete link/token**.
+- **Retention:** waitlist until you ask for deletion; plans **90 days after last edit** (stored in D1; a daily cron deletes expired rows); every plan has a separate **manage token** that allows edit and delete, while the shareable view link is read-only.
 - **Recipients:** Cloudflare as host/processor; OpenAI receives what you type in ChatGPT under its own policy; nothing sold or shared for advertising.
 - Wedding guest names are personal data about third parties: minimise (first name or initials accepted), unlisted ids, short TTL, delete control.
 

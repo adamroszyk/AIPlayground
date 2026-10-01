@@ -27,3 +27,14 @@ Next: P2 engine.
 - Full suite now: engine 22, core plans 5, landing 44, home e2e 8, wedding e2e 7, widgets 17, home editor 20, wedding editor 31.
 
 Next: P4 plugin packages, linter and review test cases.
+
+## 2026-10-01: P4 and P5 complete (ready for a live test, pending your accounts)
+
+- **P4:** `packages/plugin-kit` builds each plugin as a ZIP (plugin.json with `extensions.com.openai`, mcp.json with one streamable-http server, onboarding skill, SVG logos, real screenshots) and lints the ZIP against the submission page's rules (limits, HTTPS URLs, contrast, square icons, 5+3 cases, no credentials/apps/hooks, one server). Dev mode warns on placeholders; `--release` fails on them. A dry run with fake real values passes release mode, and standard `unzip -t` accepts the ZIPs.
+- All 10 positive review cases (5 per plugin) are executed against the real servers on workerd. They found two real problems, both fixed: (1) the layout solver crammed a dining table against a wall, so ordinary rooms returned a layout the verifier rejected (the verifier was right; regression tests added); (2) nine timeline parameters had no descriptions (a model reads those to fill arguments), and I had guessed some defaults wrong, so the descriptions now read the defaults from the engine.
+- Tool schemas are snapshotted; `npm run test:review` fails on breaking changes and lists changes OpenAI would hold for review.
+- **P5:** `scripts/deploy.mjs` (build with the real hostname, deploy with custom domain, D1 migrations, challenge secret, smoke test), `scripts/smoke.mjs` (also tested locally, including its failure path), GitHub workflow (tests on push, manual deploy), `docs/plan/go-live.md` (ordered user-only steps, env reference, runbook, what is unverified), `docs/plan/demo-script.md`.
+- Verified against Cloudflare docs: binding ids can be omitted (auto-provisioning), custom domains via `routes[].custom_domain`, the free plan's 10 ms CPU limit (so Workers Paid is required), 1 s startup limit, 64 MiB size limit (bundle is about 2 MB).
+- Full suite: `npm run test:all` exits 0 (engine 23, core 5, plugin-kit 12, node:test e2e 26, plus landing, widgets, both editors).
+
+**Loop stopped:** nothing further can be built or verified without your accounts or decisions. See `docs/plan/go-live.md`.

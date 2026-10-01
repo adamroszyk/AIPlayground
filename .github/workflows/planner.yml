@@ -1,0 +1,73 @@
+name: planner
+
+on:
+  push:
+    paths: ["planner/**", ".github/workflows/planner.yml"]
+  pull_request:
+    paths: ["planner/**", ".github/workflows/planner.yml"]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy after tests pass"
+        type: choice
+        options: ["none", "home", "wedding", "both"]
+        default: "none"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: planner
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: planner/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Point the tests at Playwright's Chromium
+        run: echo "CHROMIUM=$(node -e "console.log(require('playwright').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - run: npm run test:all
+      - name: Release lint (informational until publisher, domains and demo videos exist)
+        run: npm run package:plugins:release
+        continue-on-error: true
+
+  deploy:
+    # Only on a manual run, only after the tests pass. Needs the repository secrets and variables listed in docs/plan/go-live.md.
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy != 'none'
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: planner
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PUBLISHER_NAME: ${{ vars.PUBLISHER_NAME }}
+      CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+      ROOMWISE_URL: ${{ vars.ROOMWISE_URL }}
+      AISLE_URL: ${{ vars.AISLE_URL }}
+      OPENAI_APPS_CHALLENGE_ROOMWISE: ${{ secrets.OPENAI_APPS_CHALLENGE_ROOMWISE }}
+      OPENAI_APPS_CHALLENGE_AISLE: ${{ secrets.OPENAI_APPS_CHALLENGE_AISLE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: planner/package-lock.json
+      - run: npm ci
+      - name: Deploy Roomwise
+        if: inputs.deploy == 'home' || inputs.deploy == 'both'
+        run: node scripts/deploy.mjs home
+      - name: Deploy Aisle
+        if: inputs.deploy == 'wedding' || inputs.deploy == 'both'
+        run: node scripts/deploy.mjs wedding
