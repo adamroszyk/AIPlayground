@@ -38,3 +38,10 @@ Next: P4 plugin packages, linter and review test cases.
 - Full suite: `npm run test:all` exits 0 (engine 23, core 5, plugin-kit 12, node:test e2e 26, plus landing, widgets, both editors).
 
 **Loop stopped:** nothing further can be built or verified without your accounts or decisions. See `docs/plan/go-live.md`.
+
+## 2026-10-01: spending protection
+
+- Cloudflare has no hard spending cap (budget alerts are email-only and delayed), so the Workers now enforce daily caps themselves: 50 solver calls and 10,000 dynamic requests per product per day, 5 s CPU per call. Worst case across both products is 27.9M of the 30M CPU-ms included in the $5 plan; a unit test and the deploy script both enforce that the numbers fit. Details and honest limits: `docs/plan/cost-controls.md`.
+- Tests: usage guard unit tests (14 in core), and an end-to-end test on workerd that proves exactly N requests are served then 429, with the challenge route, preflights and static pages unaffected.
+- Alerts are dashboard-only and need you: budget alerts at $0.50 and $2.00 to szyk.adam@gmail.com (`go-live.md` step 3b).
+- Test workers now share one startup helper (migrations plus high limits), so the landing test no longer starts its own.

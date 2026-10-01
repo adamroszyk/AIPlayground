@@ -1,25 +1,13 @@
 // Landing-page end-to-end test: starts both apps on the Workers runtime (workerd), drives them in Chromium.
 // Run: npm run test:landing   (set CHROMIUM=/path/to/chromium if the default is not found)
 import { chromium } from "playwright";
-import { spawn } from "node:child_process";
+import { startWorker } from "./helpers.mjs";
 import { mkdir } from "node:fs/promises";
 
 const SP = process.env.SHOTS ?? "tests/.shots";
 await mkdir(SP, { recursive: true });
-const procs = [];
-async function start(dir, port, inspector) {
-  const p = spawn("npx", ["wrangler", "dev", "--local", "--port", String(port), "--inspector-port", String(inspector)], { cwd: dir, stdio: "ignore", detached: true });
-  procs.push(p);
-  for (let i = 0; i < 90; i++) {
-    try { if ((await fetch(`http://127.0.0.1:${port}/`)).ok) return; } catch {}
-    await new Promise((r) => setTimeout(r, 1000));
-  }
-  throw new Error(`wrangler dev did not start in ${dir}`);
-}
-const stop = () => procs.forEach((p) => { try { process.kill(-p.pid, "SIGKILL"); } catch {} });
-process.on("exit", stop);
-await start("apps/home", 8787, 9229);
-await start("apps/wedding", 8788, 9330);
+const workers = [startWorker("apps/home", 8787, 9229), startWorker("apps/wedding", 8788, 9330)];
+await Promise.all(workers.map((w) => w.ready()));
 const apps = [["home", "http://127.0.0.1:8787", "Roomwise"], ["wedding", "http://127.0.0.1:8788", "Aisle"]];
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM ?? "/opt/pw-browsers/chromium" });
 let fails = 0; const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) fails++; };
@@ -77,5 +65,5 @@ for (const [key, base, name] of apps) {
   await page.close();
 }
 await browser.close();
-stop();
+workers.forEach((w) => w.stop());
 process.exit(fails ? 1 : 0);

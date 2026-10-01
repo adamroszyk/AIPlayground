@@ -31,7 +31,10 @@ const problem = { guests: z.array(guest).min(1).max(300), tables: z.array(tableS
 const text = (t: string, structuredContent?: Record<string, unknown>) => ({ content: [{ type: "text" as const, text: t }], ...(structuredContent ? { structuredContent } : {}) });
 const reportLines = (r: SeatingReport) => r.results.map((x) => `${x.ok ? "PASS" : "FAIL"}: ${x.description}. ${x.detail}`).join("\n");
 
-export interface ToolEnv { store: PlanStore; baseUrl: string }
+export interface ToolEnv { store: PlanStore; baseUrl: string
+  /** Called before a solver runs; throws to refuse when the daily solver allowance is used up. */
+  beforeSolve?: () => Promise<void>;
+}
 
 export function createServer(env: ToolEnv): McpServer {
   const server = new McpServer(SERVER_INFO, {
@@ -52,6 +55,7 @@ export function createServer(env: ToolEnv): McpServer {
     },
     async (args) => {
       try {
+        await env.beforeSolve?.();
         const guests = buildGuests(args.guests);
         const tables = buildTables(args.tables);
         const rules = buildRules(args.rules ?? [], guests, tables);

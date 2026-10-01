@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS usage (
+  day TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  n INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, kind)
+);

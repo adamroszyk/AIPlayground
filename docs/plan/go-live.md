@@ -42,6 +42,9 @@ Verify as an individual or business in the OpenAI dashboard. The name you choose
 - An API token. Start from the "Edit Cloudflare Workers" template; if the first deploy reports a D1 permission error, add Account → D1 → Edit. Note your account id.
 - The hostname must not already have a CNAME record (Cloudflare restriction for custom domains).
 
+### 3b. Spending protection (do this before the first deploy)
+Cloudflare cannot hard-cap spending. The Workers enforce daily caps themselves (50 solver calls and 10,000 dynamic requests per product per day, 5 s CPU per call) so both products fit inside the $5 plan's included usage, and you add email warnings in the dashboard: **Manage Account > Billing > Billable Usage > Set Budget Alert**, at **$0.50** and **$2.00**, email to **szyk.adam@gmail.com**. Full explanation and the honest limits: `docs/plan/cost-controls.md`.
+
 ### 4. Public contact email
 Used on the privacy, terms and support pages and in `author.email`. Do not use a personal inbox you are not willing to publish.
 
@@ -95,6 +98,7 @@ OpenAI scans the MCP server daily and holds tool-metadata changes. Before any de
 | `PUBLISHER_NAME`, `CONTACT_EMAIL` | build, packaging | legal pages, manifest author |
 | `OPENAI_APPS_CHALLENGE_ROOMWISE`, `_AISLE` | deploy | stored as the Worker secret `OPENAI_APPS_CHALLENGE` |
 | `DEMO_URL_ROOMWISE`, `_AISLE` | packaging | `review.demo_recording_url` |
+| `DAILY_REQUEST_LIMIT`, `DAILY_SOLVE_LIMIT` | deploy (optional) | daily circuit breaker; defaults 10000 and 50; the deploy script refuses values that could exceed the included allowance |
 
 ## Runbook
 
@@ -102,6 +106,7 @@ OpenAI scans the MCP server daily and holds tool-metadata changes. Before any de
 - **Roll back:** `npx wrangler rollback --config wrangler.deploy.json`. Tool-schema changes are the risky ones; see step 11.
 - **Delete someone's plan on request:** `npx wrangler d1 execute DB --remote --config wrangler.deploy.json --command "DELETE FROM plans WHERE id = '<id>'"`. Waitlist entries live in KV under `waitlist:<product>:<sha256 of email>`.
 - **Retention:** plans expire 90 days after the last edit; a daily cron (03:17 UTC) deletes expired rows. Check the cron ran in the dashboard after the first day.
+- **Daily caps:** see `docs/plan/cost-controls.md`. "Daily capacity" or "daily limit" messages mean a cap was reached; it resets at 00:00 UTC. Usage: `npx wrangler d1 execute DB --remote --config wrangler.deploy.json --command "SELECT * FROM usage ORDER BY day DESC LIMIT 14"`.
 - **Smoke test any time:** `node scripts/smoke.mjs https://<host> home|wedding`.
-- **If the MCP endpoint returns Error 1102:** a solve exceeded the CPU limit. Check the plan is Workers Paid and `limits.cpu_ms` in the deployed config; look for unusually large inputs (limits are 300 guests, 25 pieces).
+- **If the MCP endpoint returns Error 1102:** a solve exceeded the CPU limit. Check the plan is Workers Paid and `limits.cpu_ms` (5000) in the deployed config; look for unusually large inputs (limits are 300 guests, 25 pieces).
 - **If a user reports a wrong layout or seating:** the independent verifier output shown in the tool result names each failing rule; reproduce with the same input in `check_*`.

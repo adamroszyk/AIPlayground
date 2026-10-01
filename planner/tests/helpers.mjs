@@ -1,9 +1,13 @@
 import { spawn, spawnSync } from "node:child_process";
 
-export function startWorker(dir, port, inspector, extra = []) {
+export function startWorker(dir, port, inspector, extra = [], opts = {}) {
+  // Test workers get a huge daily allowance unless a test sets its own, so the circuit breaker never trips by accident.
+  const vars = [];
+  for (const k of ["DAILY_REQUEST_LIMIT", "DAILY_SOLVE_LIMIT"]) if (!extra.some((a) => a.startsWith(`${k}:`))) vars.push("--var", `${k}:100000000`);
+  const persist = opts.persist ? ["--persist-to", opts.persist] : [];
   // Apply D1 migrations to the local database first (idempotent).
-  spawnSync("npx", ["wrangler", "d1", "migrations", "apply", "DB", "--local"], { cwd: dir, input: "y\n", stdio: ["pipe", "ignore", "ignore"] });
-  const p = spawn("npx", ["wrangler", "dev", "--local", "--port", String(port), "--inspector-port", String(inspector), ...extra], { cwd: dir, stdio: "ignore", detached: true });
+  spawnSync("npx", ["wrangler", "d1", "migrations", "apply", "DB", "--local", ...persist], { cwd: dir, input: "y\n", stdio: ["pipe", "ignore", "ignore"] });
+  const p = spawn("npx", ["wrangler", "dev", "--local", "--port", String(port), "--inspector-port", String(inspector), ...persist, ...vars, ...extra], { cwd: dir, stdio: "ignore", detached: true });
   const stop = () => { try { process.kill(-p.pid, "SIGKILL"); } catch {} };
   process.on("exit", stop);
   return { base: `http://127.0.0.1:${port}`, stop, ready: async () => {

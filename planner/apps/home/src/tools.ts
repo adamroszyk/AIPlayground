@@ -45,6 +45,8 @@ function reportLines(r: LayoutReport): string {
 export interface ToolEnv {
   store: PlanStore;
   baseUrl: string;
+  /** Called before a solver runs; throws to refuse when the daily solver allowance is used up. */
+  beforeSolve?: () => Promise<void>;
 }
 
 export function createServer(env: ToolEnv): McpServer {
@@ -66,6 +68,7 @@ export function createServer(env: ToolEnv): McpServer {
     },
     async (args) => {
       try {
+        await env.beforeSolve?.();
         const u = args.unit as Unit;
         const room = buildRoom(args.room, u);
         const pieces = buildPieces(args.furniture, u, room);

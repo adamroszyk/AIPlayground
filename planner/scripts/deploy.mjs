@@ -7,6 +7,7 @@
 //   OPENAI_APPS_CHALLENGE_ROOMWISE / _AISLE       token from the OpenAI dashboard (optional on the first deploy)
 import { spawnSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
+import { COST_MODEL, limitsFromEnv } from "../packages/core/src/usage.ts";
 
 const [app, ...flags] = process.argv.slice(2);
 const dry = flags.includes("--dry-run"), skipSmoke = flags.includes("--skip-smoke");
@@ -38,15 +39,19 @@ const base = JSON.parse(await readFile(`${dir}wrangler.jsonc`, "utf8"));
 // A free <worker>.<your-subdomain>.workers.dev hostname needs no route. Anything else is attached as a custom domain (needs an active zone).
 const onWorkersDev = host.endsWith(".workers.dev");
 if (onWorkersDev && host.split(".")[0] !== base.name) { console.error(`On workers.dev the hostname must start with the Worker name "${base.name}" (got ${host}). Use https://${base.name}.<your-workers-subdomain>.workers.dev`); process.exit(1); }
+const limits = limitsFromEnv(process.env);
+const perMonth = (limits.requestsPerDay * COST_MODEL.worstCpuMsPerRequest + limits.solvesPerDay * COST_MODEL.cpuMsLimitPerInvocation) * COST_MODEL.products * COST_MODEL.daysPerMonth;
+if (perMonth > COST_MODEL.includedCpuMsPerMonth) { console.error(`These limits (${limits.requestsPerDay} requests and ${limits.solvesPerDay} solves per day) could use ${(perMonth / 1e6).toFixed(1)}M CPU ms a month in the worst case, over the ${COST_MODEL.includedCpuMsPerMonth / 1e6}M included in the $5 plan. Lower them, or accept possible overage charges by editing COST_MODEL deliberately.`); process.exit(1); }
 const config = {
   ...base,
   ...(onWorkersDev ? { workers_dev: true, routes: [] } : { routes: host ? [{ pattern: host, custom_domain: true }] : [] }),
-  vars: { ...(base.vars ?? {}), PUBLIC_BASE_URL: siteUrl },
-  limits: { cpu_ms: 10000 }, // the solver is CPU-heavy; this needs the Workers Paid plan (free plan allows 10 ms)
+  // Daily circuit breaker: see docs/plan/cost-controls.md. Override with DAILY_REQUEST_LIMIT / DAILY_SOLVE_LIMIT only knowingly.
+  vars: { ...(base.vars ?? {}), PUBLIC_BASE_URL: siteUrl, DAILY_REQUEST_LIMIT: String(limits.requestsPerDay), DAILY_SOLVE_LIMIT: String(limits.solvesPerDay) },
+  limits: { cpu_ms: COST_MODEL.cpuMsLimitPerInvocation }, // per-invocation CPU cap; the solver needs the Workers Paid plan (free plan allows 10 ms)
   observability: { enabled: true },
 };
 await writeFile(`${dir}wrangler.deploy.json`, JSON.stringify(config, null, 2) + "\n");
-console.log(`\nDeploy config for ${base.name}:\n${JSON.stringify({ routes: config.routes, vars: config.vars, limits: config.limits }, null, 2)}`);
+console.log(`\nDeploy config for ${base.name}:\n${JSON.stringify({ routes: config.routes, vars: config.vars, limits: config.limits }, null, 2)}\nWorst-case CPU at these limits: ${(perMonth / 1e6).toFixed(1)}M of ${COST_MODEL.includedCpuMsPerMonth / 1e6}M included ms per month (both products).`);
 
 // 3. deploy
 sh("npx", ["wrangler", "deploy", "-c", "wrangler.deploy.json", ...(dry ? ["--dry-run", "--outdir", `/tmp/deploy-${app}`] : [])]);
