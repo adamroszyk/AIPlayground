@@ -33,7 +33,9 @@ One command runs all of it: `cd planner && npm run test:all`.
 Verify as an individual or business in the OpenAI dashboard. The name you choose goes in `PUBLISHER_NAME` and must be identical on the landing pages, `author.name` and `developerName` (the linter enforces the last two).
 
 ### 2. Domain and hostnames
-Add a domain to Cloudflare (an active zone). Choose two hostnames, for example `roomwise.<domain>` and `aisle.<domain>`. **The MCP URL (`https://<host>/mcp`) cannot be changed after the first upload without OpenAI support.** The domain-verification token is per hostname.
+**Free option:** `https://roomwise.<your-workers-subdomain>.workers.dev` and `https://aisle.<your-workers-subdomain>.workers.dev` (the Worker names are `roomwise` and `aisle`). Your subdomain is in the Cloudflare dashboard under Workers & Pages, or in the URL of any existing Worker. `scripts/deploy.mjs` handles it (no route needed). Trade-offs: Cloudflare treats workers.dev as hobby-grade, and **renaming your workers.dev subdomain later changes the MCP URL and breaks the plugin**. Testing in ChatGPT developer mode (step 7) needs only a working HTTPS URL, not an upload, so a workers.dev URL is a good place to start.
+
+**Own domain:** add a domain to Cloudflare (an active zone). Choose two hostnames, for example `roomwise.<domain>` and `aisle.<domain>`. **The MCP URL (`https://<host>/mcp`) cannot be changed after the first upload without OpenAI support.** The domain-verification token is per hostname.
 
 ### 3. Cloudflare account
 - **Workers Paid plan.** The free plan allows 10 ms CPU per request; the seating and layout solvers need more (paid default is 30 s; the deploy config caps it at 10 s).
@@ -67,7 +69,7 @@ node scripts/deploy.mjs home && node scripts/deploy.mjs wedding   # sets the sec
 Add each MCP URL as a connector in developer mode and run all 8 prompts per plugin from `apps/*/plugin/spec.ts`. Watch for: the widget rendering, the edit link opening the editor, the model choosing the expected tool, the negative prompts being declined. Tell me what you see and I will fix it.
 
 ### 8. Demo video
-Record each plugin using `docs/plan/demo-script.md`; host it where reviewers can open it without signing in. Set `DEMO_URL_ROOMWISE` and `DEMO_URL_AISLE`.
+`npm run demo:video` records a captioned walkthrough of each product (real MCP call, real widget in an MCP Apps host, real web editor) into `planner/dist/demo/`. It is not footage from inside ChatGPT. Record the ChatGPT part yourself using `docs/plan/demo-script.md` and add it, since reviewers need to see the plugin used in ChatGPT. Host the result where reviewers can open it without signing in. Set `DEMO_URL_ROOMWISE` and `DEMO_URL_AISLE`.
 
 ### 9. Build the release ZIPs
 ```sh

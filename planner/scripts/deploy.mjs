@@ -35,9 +35,12 @@ sh("npm", ["run", "build", "-w", P.pkg], { cwd: new URL("..", import.meta.url).p
 
 // 2. deploy config = the committed config + this hostname. Binding ids are left out: wrangler provisions KV and D1 on first deploy.
 const base = JSON.parse(await readFile(`${dir}wrangler.jsonc`, "utf8"));
+// A free <worker>.<your-subdomain>.workers.dev hostname needs no route. Anything else is attached as a custom domain (needs an active zone).
+const onWorkersDev = host.endsWith(".workers.dev");
+if (onWorkersDev && host.split(".")[0] !== base.name) { console.error(`On workers.dev the hostname must start with the Worker name "${base.name}" (got ${host}). Use https://${base.name}.<your-workers-subdomain>.workers.dev`); process.exit(1); }
 const config = {
   ...base,
-  routes: host ? [{ pattern: host, custom_domain: true }] : [],
+  ...(onWorkersDev ? { workers_dev: true, routes: [] } : { routes: host ? [{ pattern: host, custom_domain: true }] : [] }),
   vars: { ...(base.vars ?? {}), PUBLIC_BASE_URL: siteUrl },
   limits: { cpu_ms: 10000 }, // the solver is CPU-heavy; this needs the Workers Paid plan (free plan allows 10 ms)
   observability: { enabled: true },
