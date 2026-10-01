@@ -99,8 +99,12 @@ test("bad input comes back as readable tool errors, never a crash", async () => 
   assert.ok(invalid.error || invalid.result?.isError, "schema violations are rejected");
 });
 
-test("an impossible room is reported honestly, not faked", async () => {
-  const r = await call("plan_room_layout", { unit: "in", save: false, room: { width: 156, length: 132, doors: [{ wall: "south", offset: 20, width: 32 }], windows: [{ wall: "north", offset: 50, width: 60 }] }, furniture: [{ name: "Dining table", kind: "dining_table", width: 72, depth: 36 }, { name: "Sideboard", kind: "storage", width: 60, depth: 18 }] });
+test("a dining room that fits is solved, and one that cannot fit is reported honestly, not faked", async () => {
+  const room = { width: 156, length: 132, doors: [{ wall: "south", offset: 20, width: 32 }], windows: [{ wall: "north", offset: 50, width: 60 }] };
+  const fits = await call("plan_room_layout", { unit: "in", save: false, room, furniture: [{ name: "Dining table", kind: "dining_table", width: 72, depth: 36 }, { name: "Sideboard", kind: "storage", width: 60, depth: 18 }] });
+  assert.equal(fits.structuredContent.status, "solved", fits.content[0].text.slice(0, 300));
+  // 36 in all round a 72x36 table needs 144x108, and a 30 in deep unit needs 30 in clear in front as well: 138 > 132.
+  const r = await call("plan_room_layout", { unit: "in", save: false, room, furniture: [{ name: "Dining table", kind: "dining_table", width: 72, depth: 36 }, { name: "Sideboard", kind: "storage", width: 60, depth: 30 }] });
   assert.equal(r.structuredContent.status, "partial");
   assert.equal(r.structuredContent.report.ok, false);
   assert.match(r.content[0].text, /not every check passes/);

@@ -36,11 +36,14 @@ function nonNegative(name: string, v: number) {
   if (!Number.isFinite(v) || v < 0 || v > 24 * 60) throw new RangeError(`${name} must be between 0 and 1440 minutes`);
 }
 
+/** Minutes used when an input is left out. Tool descriptions and the editor read these, so they cannot drift. */
+export const TIMELINE_DEFAULTS = {
+  ceremonyMinutes: 30, guestsArriveMinutesBefore: 30, photosMinutes: 45, travelMinutes: 0, cocktailMinutes: 60, dinnerMinutes: 75,
+  toastsMinutes: 20, firstDanceMinutes: 10, cakeMinutes: 15, danceMinutes: 120, bufferMinutes: 10,
+} as const;
+
 export function buildTimeline(input: TimelineInput): Timeline {
-  const d = {
-    ceremonyMinutes: 30, guestsArriveMinutesBefore: 30, photosMinutes: 45, travelMinutes: 0, cocktailMinutes: 60, dinnerMinutes: 75,
-    toastsMinutes: 20, firstDanceMinutes: 10, cakeMinutes: 15, danceMinutes: 120, bufferMinutes: 10, ...input,
-  };
+  const d = { ...TIMELINE_DEFAULTS, ...input };
   for (const [k, v] of Object.entries(d)) if (typeof v === "number") nonNegative(k, v);
   const start = parseClock(input.ceremonyStart);
   const segs: { name: string; minutes: number; note?: string; gap?: number }[] = [];

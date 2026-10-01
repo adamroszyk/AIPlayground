@@ -383,7 +383,11 @@ function scoreCandidate(room: Room, piece: Piece, pl: Placement, placed: { piece
     if (b.x1 >= room.width - 1) touching.push("E");
     if (["sofa", "bed", "tv"].includes(kind) && touching.some((w) => doorWalls.has(w))) s -= 12;
   }
-  else if (kind === "dining_table") s += Math.min(wd, 60) * 0.2;
+  else if (kind === "dining_table") {
+    // The chair zone must fit inside the room, and a dining table belongs near the middle of it.
+    s += wd >= rules.diningClearance ? 60 : -(rules.diningClearance - wd) * 2;
+    s -= Math.hypot(cx - roomC[0], cy - roomC[1]) * 0.15;
+  }
   // face the room (or the focal piece)
   const toC = [roomC[0] - cx, roomC[1] - cy], len = Math.hypot(toC[0]!, toC[1]!) || 1;
   const cosC = (fx * toC[0]! + fy * toC[1]!) / len;
@@ -422,13 +426,15 @@ function scoreCandidate(room: Room, piece: Piece, pl: Placement, placed: { piece
     }
     if (g > 0 && g < 10 && !(kind === "nightstand" || kind === "side_table" || ok === "nightstand" || ok === "side_table")) s -= 14; // unusable slivers
     if (kind === "dining_table") s += Math.min(g, 48) * 0.3;
+    // Nothing but chairs may sit inside a dining table's chair zone.
+    if (ok === "dining_table" && kind !== "chair" && overlaps(b, inflate(ob, rules.diningClearance))) s -= 60;
   }
   // keep a corridor from each door to the middle of the room open
   for (const o of room.openings) {
     if (o.type !== "door") continue;
     const [ax, ay] = doorAccess(room, o);
     const c: Box = { x0: Math.min(ax, roomC[0]) - 18, x1: Math.max(ax, roomC[0]) + 18, y0: Math.min(ay, roomC[1]) - 18, y1: Math.max(ay, roomC[1]) + 18 };
-    if (overlaps(b, c)) s -= 30;
+    if (kind !== "dining_table" && overlaps(b, c)) s -= 30;
     if (gapBetween(b, { x0: ax - 1, y0: ay - 1, x1: ax + 1, y1: ay + 1 }) < 20) s -= 25;
   }
   return s;

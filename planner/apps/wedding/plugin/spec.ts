@@ -1,0 +1,86 @@
+import type { PluginSpec } from "@planner/plugin-kit";
+import { wedding } from "../site/content.ts";
+
+const t = wedding.tokens;
+
+export const spec: PluginSpec = {
+  name: "aisle-seating",
+  version: "1.0.0",
+  description: "Build a wedding seating chart that satisfies your rules, check one you already have, and plan the day-of timeline.",
+  keywords: ["wedding", "seating chart", "timeline", "reception", "events"],
+  displayName: "Aisle",
+  shortDescription: "Seating charts, rules checked",
+  longDescription: [
+    "Aisle builds wedding seating charts that follow your rules, and shows that they do.",
+    "",
+    "Give your assistant the guest list (names or first names, with optional groups and parties such as couples or families), the tables and their sizes, and the rules: who must sit together, who must be kept apart, who sits at the head table, and anyone who has to be at a particular table. Aisle seats everyone, keeps parties together and groups close, and then re-checks every rule on the finished chart. You get who sits where, a pass or fail for each rule, and a link to open the chart in a web editor where you can drag guests between seats and see the rules re-checked as you go.",
+    "",
+    "If your rules cannot all be met, Aisle says which ones conflict and why, shows the closest chart it could build, and names the rules you could relax. You can also give Aisle a chart you already have and ask whether it works.",
+    "",
+    "Aisle can also build a day-of timeline from the ceremony start: guest arrival, ceremony, photos, travel between venues, cocktail hour, dinner, toasts, first dance, cake and dancing, with buffers, and warnings for a venue curfew or photos after sunset.",
+    "",
+    "Who it is for: couples and planners with a guest list and a few awkward rules.",
+    "",
+    "What it does not do: it does not book vendors, send invitations, manage RSVPs or budgets, or take payments. It does not know your venue's floor plan; you tell it the number and size of tables. Please use first names or initials where you can.",
+    "",
+    "Saved charts are private links and are deleted 90 days after the last edit. No account is needed.",
+  ].join("\n"),
+  category: "Lifestyle",
+  capabilities: ["Plan wedding seating", "Check a seating chart", "Build a wedding timeline"],
+  defaultPrompt: [
+    "Seat 60 guests at tables of 8 and keep the Smiths together.",
+    "Check whether this seating chart follows my rules.",
+    "Build a timeline for a 4pm ceremony with a 20 minute drive.",
+  ],
+  server: "aisle",
+  glyph: "table",
+  brand: { light: t.light.accent!, dark: t.dark.accent!, darkBg: t.dark.bg!, lightBg: t.light.bg! },
+  skill: {
+    name: "get-started",
+    description: "How to use Aisle to build and check a wedding seating chart and a day-of timeline, and what to ask the user first.",
+    body: `
+# Getting started with Aisle
+
+Use the Aisle tools when someone wants a wedding seating chart, wants to check one, or wants a day-of timeline.
+
+## Ask before you plan
+
+- The guest list. First names or initials are enough. Every name must be unique (add a last initial if two guests share a first name).
+- Groups (for example "Bride's family", "College friends") and parties: couples, plus-ones and families with kids who must always sit together.
+- The tables: how many, how many seats each, and which is the head table.
+- The rules: who must sit together, who must be kept apart, who is at the head table, anyone fixed to a table. Do not invent rules the user did not state.
+
+## Choose the tool
+
+- \`plan_wedding_seating\`: build a chart from the guests, tables and rules.
+- \`check_wedding_seating\`: verify a chart the user already has.
+- \`build_wedding_timeline\`: day-of schedule from the ceremony start time (24-hour HH:MM). Ask for travel time and venue curfew if they matter.
+
+## Report results honestly
+
+- Say how many rules were met and name any that were not.
+- If the rules conflict, relay the conflict and suggest which rule to relax. Do not pretend the chart works.
+- Share the edit link so the user can drag guests around on the web, and the view-only link to show others. Tell them charts are deleted 90 days after the last edit.
+- Guest names are personal data about other people. Do not ask for more than names, groups and rules.
+
+## Out of scope
+
+Booking vendors, sending invitations, RSVPs, budgets, payments, venue floor plans, and seating rules based on location in the room (near the exit, near the stage). Say what is not supported and offer what Aisle can do.
+`,
+  },
+  cases: {
+    positive: [
+      { description: "Seat 60 guests with rules", prompt: "Seat my 60 wedding guests at 8 tables of 8. Keep the four Smiths together and make sure Alex and Jo are at different tables.", tools_triggered: "plan_wedding_seating", expected_behavior: "Seats every guest, keeps the Smiths at one table and Alex and Jo at different tables, reports each rule as met, and returns view and edit links." },
+      { description: "Check an existing chart", prompt: "Check this seating chart. Tables of 4. Table 1: Ann, Bob, Cy. Table 2: Dee, Eli. Ann and Eli must not sit together, and Bob and Dee must sit together.", tools_triggered: "check_wedding_seating", expected_behavior: "Reports the keep-together rule for Bob and Dee as failing and the keep-apart rule as met, with each rule's result." },
+      { description: "Build a day-of timeline", prompt: "Build a timeline for a 4pm wedding ceremony with a 20 minute drive to the reception and a venue curfew of 11pm.", tools_triggered: "build_wedding_timeline", expected_behavior: "Lists segments with start and end times from the 4pm ceremony including the travel, and warns about the 11pm curfew if the schedule runs past it." },
+      { description: "Head table", prompt: "Seat 20 guests at tables of 6 plus a head table of 6. Put the bride, groom and both sets of parents at the head table.", tools_triggered: "plan_wedding_seating", expected_behavior: "Seats the named guests at the head table, seats everyone else at regular tables, and reports the head table rule as met." },
+      { description: "Rules that cannot all be met", prompt: "Seat Ann, Bob and Cy at two tables of 2. Ann and Bob must sit together, but Ann and Bob must also be kept apart.", tools_triggered: "plan_wedding_seating", expected_behavior: "Says the rules cannot all be met, explains that the two rules contradict each other, and suggests which rule to relax." },
+    ],
+    negative: [
+      { description: "Book a vendor (unsupported)", prompt: "Book a photographer for my wedding in Austin on June 14." },
+      { description: "Send invitations (unsupported)", prompt: "Email invitations to everyone on my guest list." },
+      { description: "Take a payment (no commerce)", prompt: "Charge my card for the venue deposit." },
+    ],
+  },
+  releaseNotes: "Initial release: seating chart planning, chart checking and a day-of timeline, with a web editor for saved charts.",
+};

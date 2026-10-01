@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
 import { z } from "zod";
-import { buildTimeline, solveSeating, verifySeating, type SeatingReport } from "@planner/engine";
+import { TIMELINE_DEFAULTS as D, buildTimeline, solveSeating, verifySeating, type SeatingReport } from "@planner/engine";
 import { CREATES_PLAN, READ_ONLY, fail, type PlanStore } from "@planner/core";
 import { buildArrangement, buildGuests, buildRules, buildTables, type SeatingPlan } from "./model.ts";
 import { WIDGET_HTML } from "./widget.generated.ts";
@@ -112,17 +112,17 @@ export function createServer(env: ToolEnv): McpServer {
         "Builds a day-of schedule from the ceremony start time: guest arrival, ceremony, photos, optional travel between venues, cocktail hour, dinner, toasts, first dance, cake and dancing, with buffers between segments. Warns if it runs past a venue curfew or if photos run after sunset. Times are 24-hour HH:MM. Use when the user wants a wedding day schedule. Durations are in minutes and all optional.",
       inputSchema: z.object({
         ceremonyStart: z.string().describe("Ceremony start, 24-hour HH:MM, e.g. 16:00."),
-        ceremonyMinutes: z.number().min(0).max(240).optional(),
-        guestsArriveMinutesBefore: z.number().min(0).max(240).optional(),
-        photosMinutes: z.number().min(0).max(240).optional(),
+        ceremonyMinutes: z.number().min(0).max(240).optional().describe(`Ceremony length in minutes (default ${D.ceremonyMinutes}).`),
+        guestsArriveMinutesBefore: z.number().min(0).max(240).optional().describe(`How long before the ceremony guests start arriving (default ${D.guestsArriveMinutesBefore}).`),
+        photosMinutes: z.number().min(0).max(240).optional().describe(`Photo session after the ceremony, in minutes (default ${D.photosMinutes}).`),
         travelMinutes: z.number().min(0).max(240).optional().describe("Travel between ceremony and reception venues; 0 if the same place."),
-        cocktailMinutes: z.number().min(0).max(240).optional(),
-        dinnerMinutes: z.number().min(0).max(240).optional(),
-        toastsMinutes: z.number().min(0).max(120).optional(),
-        firstDanceMinutes: z.number().min(0).max(60).optional(),
-        cakeMinutes: z.number().min(0).max(60).optional(),
-        danceMinutes: z.number().min(0).max(360).optional(),
-        bufferMinutes: z.number().min(0).max(60).optional().describe("Slack between segments; default 10."),
+        cocktailMinutes: z.number().min(0).max(240).optional().describe(`Cocktail hour length in minutes (default ${D.cocktailMinutes}).`),
+        dinnerMinutes: z.number().min(0).max(240).optional().describe(`Dinner length in minutes (default ${D.dinnerMinutes}).`),
+        toastsMinutes: z.number().min(0).max(120).optional().describe(`Speeches and toasts in minutes (default ${D.toastsMinutes}).`),
+        firstDanceMinutes: z.number().min(0).max(60).optional().describe(`First dance in minutes (default ${D.firstDanceMinutes}).`),
+        cakeMinutes: z.number().min(0).max(60).optional().describe(`Cake cutting in minutes (default ${D.cakeMinutes}).`),
+        danceMinutes: z.number().min(0).max(360).optional().describe(`Open dancing in minutes (default ${D.danceMinutes}).`),
+        bufferMinutes: z.number().min(0).max(60).optional().describe(`Slack between segments in minutes (default ${D.bufferMinutes}).`),
         venueCurfew: z.string().optional().describe("Time the venue must be empty, HH:MM. Earlier than the ceremony means after midnight."),
         sunset: z.string().optional().describe("Sunset time HH:MM, to flag outdoor photos after dark."),
       }),

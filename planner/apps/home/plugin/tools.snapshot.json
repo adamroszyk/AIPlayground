@@ -1,0 +1,637 @@
+[
+  {
+    "name": "plan_room_layout",
+    "title": "Plan a room layout",
+    "description": "Plans where furniture goes in one room, to scale. Given the room's size, door and window positions, and a list of furniture with sizes, it finds a layout and checks it against clearance rules: walkway width, door swings, sofa-to-coffee-table distance, dining and storage clearance, and whether every seat can be reached. Returns each piece's position and facing, a pass/fail report with measured values, and links to view and edit the plan on the web. Use when the user wants to arrange furniture or check whether pieces fit. It does not redesign a room from a photo or choose styles.",
+    "inputSchema": {
+      "type": "object",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "unit": {
+          "default": "in",
+          "description": "Unit used for every length in this call (room, openings, furniture, positions). Default inches.",
+          "type": "string",
+          "enum": [
+            "in",
+            "ft",
+            "cm",
+            "m"
+          ]
+        },
+        "room": {
+          "type": "object",
+          "properties": {
+            "width": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "West-to-east length of the room."
+            },
+            "length": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "North-to-south length of the room."
+            },
+            "doors": {
+              "description": "Doors. At least one is strongly recommended so walkways can be checked.",
+              "maxItems": 4,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "wall": {
+                    "type": "string",
+                    "enum": [
+                      "north",
+                      "east",
+                      "south",
+                      "west"
+                    ],
+                    "description": "Which wall the opening is on. North is the top wall of the plan, south the bottom, west the left, east the right."
+                  },
+                  "offset": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Distance from the corner to the nearest edge of the opening: from the west end of a north or south wall, or from the north end of an east or west wall."
+                  },
+                  "width": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Width of the opening."
+                  },
+                  "height": {
+                    "description": "Height of the opening; only used for paint estimates. Defaults to 80 in for doors and 48 in for windows.",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "swing": {
+                    "description": "Doors only: whether the door swings into the room (default) or outward.",
+                    "type": "string",
+                    "enum": [
+                      "in",
+                      "out"
+                    ]
+                  }
+                },
+                "required": [
+                  "wall",
+                  "offset",
+                  "width"
+                ]
+              }
+            },
+            "windows": {
+              "maxItems": 8,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "wall": {
+                    "type": "string",
+                    "enum": [
+                      "north",
+                      "east",
+                      "south",
+                      "west"
+                    ],
+                    "description": "Which wall the opening is on. North is the top wall of the plan, south the bottom, west the left, east the right."
+                  },
+                  "offset": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Distance from the corner to the nearest edge of the opening: from the west end of a north or south wall, or from the north end of an east or west wall."
+                  },
+                  "width": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Width of the opening."
+                  },
+                  "height": {
+                    "description": "Height of the opening; only used for paint estimates. Defaults to 80 in for doors and 48 in for windows.",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "swing": {
+                    "description": "Doors only: whether the door swings into the room (default) or outward.",
+                    "type": "string",
+                    "enum": [
+                      "in",
+                      "out"
+                    ]
+                  }
+                },
+                "required": [
+                  "wall",
+                  "offset",
+                  "width"
+                ]
+              }
+            }
+          },
+          "required": [
+            "width",
+            "length"
+          ]
+        },
+        "furniture": {
+          "minItems": 1,
+          "maxItems": 25,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60,
+                "description": "Name shown on the plan, e.g. 'Sofa'."
+              },
+              "kind": {
+                "description": "Type of furniture; it decides which clearance rules apply. Use 'generic' if none fit.",
+                "type": "string",
+                "enum": [
+                  "sofa",
+                  "chair",
+                  "coffee_table",
+                  "side_table",
+                  "tv",
+                  "bed",
+                  "nightstand",
+                  "desk",
+                  "dining_table",
+                  "storage",
+                  "generic"
+                ]
+              },
+              "width": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Side-to-side size of the piece as you face its front."
+              },
+              "depth": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Front-to-back size of the piece."
+              },
+              "tall": {
+                "description": "True for pieces that must not cover a window, such as a bookcase.",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name",
+              "width",
+              "depth"
+            ]
+          }
+        },
+        "save": {
+          "default": true,
+          "description": "Save the plan and return links to view and edit it. Set false for a throwaway check.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "room",
+        "furniture"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "title": "Plan a room layout"
+    },
+    "_meta": {
+      "ui": {
+        "resourceUri": "ui://roomwise/plan.html"
+      },
+      "ui/resourceUri": "ui://roomwise/plan.html"
+    }
+  },
+  {
+    "name": "check_room_layout",
+    "title": "Check a room layout",
+    "description": "Checks a layout the user already has (or has edited) against the same clearance rules, without moving anything. Each piece needs its position (its north-west corner measured from the room's north-west corner) and the direction it faces. Returns pass/fail for each rule with measured values such as the narrowest walkway. Use to answer 'will this arrangement work?' for specific positions.",
+    "inputSchema": {
+      "type": "object",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "unit": {
+          "default": "in",
+          "description": "Unit used for every length in this call (room, openings, furniture, positions). Default inches.",
+          "type": "string",
+          "enum": [
+            "in",
+            "ft",
+            "cm",
+            "m"
+          ]
+        },
+        "room": {
+          "type": "object",
+          "properties": {
+            "width": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "West-to-east length of the room."
+            },
+            "length": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "North-to-south length of the room."
+            },
+            "doors": {
+              "description": "Doors. At least one is strongly recommended so walkways can be checked.",
+              "maxItems": 4,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "wall": {
+                    "type": "string",
+                    "enum": [
+                      "north",
+                      "east",
+                      "south",
+                      "west"
+                    ],
+                    "description": "Which wall the opening is on. North is the top wall of the plan, south the bottom, west the left, east the right."
+                  },
+                  "offset": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Distance from the corner to the nearest edge of the opening: from the west end of a north or south wall, or from the north end of an east or west wall."
+                  },
+                  "width": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Width of the opening."
+                  },
+                  "height": {
+                    "description": "Height of the opening; only used for paint estimates. Defaults to 80 in for doors and 48 in for windows.",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "swing": {
+                    "description": "Doors only: whether the door swings into the room (default) or outward.",
+                    "type": "string",
+                    "enum": [
+                      "in",
+                      "out"
+                    ]
+                  }
+                },
+                "required": [
+                  "wall",
+                  "offset",
+                  "width"
+                ]
+              }
+            },
+            "windows": {
+              "maxItems": 8,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "wall": {
+                    "type": "string",
+                    "enum": [
+                      "north",
+                      "east",
+                      "south",
+                      "west"
+                    ],
+                    "description": "Which wall the opening is on. North is the top wall of the plan, south the bottom, west the left, east the right."
+                  },
+                  "offset": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Distance from the corner to the nearest edge of the opening: from the west end of a north or south wall, or from the north end of an east or west wall."
+                  },
+                  "width": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Width of the opening."
+                  },
+                  "height": {
+                    "description": "Height of the opening; only used for paint estimates. Defaults to 80 in for doors and 48 in for windows.",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "swing": {
+                    "description": "Doors only: whether the door swings into the room (default) or outward.",
+                    "type": "string",
+                    "enum": [
+                      "in",
+                      "out"
+                    ]
+                  }
+                },
+                "required": [
+                  "wall",
+                  "offset",
+                  "width"
+                ]
+              }
+            }
+          },
+          "required": [
+            "width",
+            "length"
+          ]
+        },
+        "furniture": {
+          "minItems": 1,
+          "maxItems": 25,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60,
+                "description": "Name shown on the plan, e.g. 'Sofa'."
+              },
+              "kind": {
+                "description": "Type of furniture; it decides which clearance rules apply. Use 'generic' if none fit.",
+                "type": "string",
+                "enum": [
+                  "sofa",
+                  "chair",
+                  "coffee_table",
+                  "side_table",
+                  "tv",
+                  "bed",
+                  "nightstand",
+                  "desk",
+                  "dining_table",
+                  "storage",
+                  "generic"
+                ]
+              },
+              "width": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Side-to-side size of the piece as you face its front."
+              },
+              "depth": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Front-to-back size of the piece."
+              },
+              "tall": {
+                "description": "True for pieces that must not cover a window, such as a bookcase.",
+                "type": "boolean"
+              },
+              "x": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Distance from the room's west wall to the piece's west edge (after rotation)."
+              },
+              "y": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Distance from the room's north wall to the piece's north edge (after rotation)."
+              },
+              "facing": {
+                "type": "string",
+                "enum": [
+                  "north",
+                  "east",
+                  "south",
+                  "west"
+                ],
+                "description": "Direction the front of the piece faces."
+              }
+            },
+            "required": [
+              "name",
+              "width",
+              "depth",
+              "x",
+              "y",
+              "facing"
+            ]
+          }
+        }
+      },
+      "required": [
+        "room",
+        "furniture"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Check a room layout"
+    }
+  },
+  {
+    "name": "estimate_room_materials",
+    "title": "Estimate flooring, paint and baseboard",
+    "description": "Calculates how much flooring, paint and baseboard a room needs from its size and openings, with waste allowances, and the cost if unit prices are given. Returns floor area, paint gallons (exact and to buy), baseboard length and stated assumptions. Use for 'how much paint/flooring do I need?'. Prices are in the user's own currency; flooring is priced per square foot, baseboard per foot and paint per gallon.",
+    "inputSchema": {
+      "type": "object",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "unit": {
+          "default": "in",
+          "description": "Unit used for every length in this call (room, openings, furniture, positions). Default inches.",
+          "type": "string",
+          "enum": [
+            "in",
+            "ft",
+            "cm",
+            "m"
+          ]
+        },
+        "room": {
+          "type": "object",
+          "properties": {
+            "width": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "West-to-east length of the room."
+            },
+            "length": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "North-to-south length of the room."
+            },
+            "doors": {
+              "description": "Doors. At least one is strongly recommended so walkways can be checked.",
+              "maxItems": 4,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "wall": {
+                    "type": "string",
+                    "enum": [
+                      "north",
+                      "east",
+                      "south",
+                      "west"
+                    ],
+                    "description": "Which wall the opening is on. North is the top wall of the plan, south the bottom, west the left, east the right."
+                  },
+                  "offset": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Distance from the corner to the nearest edge of the opening: from the west end of a north or south wall, or from the north end of an east or west wall."
+                  },
+                  "width": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Width of the opening."
+                  },
+                  "height": {
+                    "description": "Height of the opening; only used for paint estimates. Defaults to 80 in for doors and 48 in for windows.",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "swing": {
+                    "description": "Doors only: whether the door swings into the room (default) or outward.",
+                    "type": "string",
+                    "enum": [
+                      "in",
+                      "out"
+                    ]
+                  }
+                },
+                "required": [
+                  "wall",
+                  "offset",
+                  "width"
+                ]
+              }
+            },
+            "windows": {
+              "maxItems": 8,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "wall": {
+                    "type": "string",
+                    "enum": [
+                      "north",
+                      "east",
+                      "south",
+                      "west"
+                    ],
+                    "description": "Which wall the opening is on. North is the top wall of the plan, south the bottom, west the left, east the right."
+                  },
+                  "offset": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Distance from the corner to the nearest edge of the opening: from the west end of a north or south wall, or from the north end of an east or west wall."
+                  },
+                  "width": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Width of the opening."
+                  },
+                  "height": {
+                    "description": "Height of the opening; only used for paint estimates. Defaults to 80 in for doors and 48 in for windows.",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "swing": {
+                    "description": "Doors only: whether the door swings into the room (default) or outward.",
+                    "type": "string",
+                    "enum": [
+                      "in",
+                      "out"
+                    ]
+                  }
+                },
+                "required": [
+                  "wall",
+                  "offset",
+                  "width"
+                ]
+              }
+            }
+          },
+          "required": [
+            "width",
+            "length"
+          ]
+        },
+        "ceilingHeight": {
+          "description": "Ceiling height; default 8 ft (96 in).",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "paint": {
+          "type": "object",
+          "properties": {
+            "coats": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 4
+            },
+            "coveragePerGallonSqFt": {
+              "description": "Square feet one gallon covers; default 350.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "includeCeiling": {
+              "type": "boolean"
+            },
+            "pricePerGallon": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "flooring": {
+          "type": "object",
+          "properties": {
+            "wastePercent": {
+              "description": "Default 10.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "pricePerSqFt": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "baseboard": {
+          "type": "object",
+          "properties": {
+            "wastePercent": {
+              "description": "Default 10.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "pricePerFoot": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "required": [
+        "room"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Estimate flooring, paint and baseboard"
+    }
+  }
+]

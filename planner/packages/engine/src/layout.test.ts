@@ -94,9 +94,21 @@ test("solver: classic rooms are solved and independently re-verified", () => {
   }
 });
 
+test("solver: a dining table gets its 36 in chair zone when the room allows it", () => {
+  // Regression: the table used to be pushed against a wall, so these ordinary rooms came back "partial".
+  for (const [w, l, off] of [[144, 132, 48], [144, 132, 12], [156, 144, 12], [168, 144, 96], [156, 156, 12]] as const) {
+    const room: Room = { width: w, length: l, openings: [door("S", off)] };
+    const pieces: Piece[] = [{ id: "dt", name: "Dining table", kind: "dining_table", w: 60, d: 36 }, { id: "sb", name: "Sideboard", kind: "storage", w: 60, d: 18 }];
+    const res = solveLayout(room, pieces, { seed: 1, restarts: 14 });
+    assert.equal(res.status, "solved", `${w}x${l} door at ${off}: ${JSON.stringify(res.report.results.filter((r) => !r.ok))}`);
+    assert.equal(verifyLayout(room, pieces, res.placements).ok, true, "the independent verifier agrees");
+  }
+});
+
 test("solver: an impossible room is reported as partial with the failing rule named", () => {
+  // 36 in chair zone all round a 72x36 table needs 144x108; a 30 in deep unit also needs 30 in of clear front: 138 > 132 and 174 > 156.
   const room: Room = { width: 156, length: 132, openings: [door("S", 20), win("N", 50)] };
-  const pieces: Piece[] = [{ id: "dt", name: "Dining table", kind: "dining_table", w: 72, d: 36 }, { id: "sb", name: "Sideboard", kind: "storage", w: 60, d: 18 }];
+  const pieces: Piece[] = [{ id: "dt", name: "Dining table", kind: "dining_table", w: 72, d: 36 }, { id: "sb", name: "Sideboard", kind: "storage", w: 60, d: 30 }];
   const res = solveLayout(room, pieces, { seed: 3 });
   assert.equal(res.status, "partial");
   assert.equal(res.report.ok, false);

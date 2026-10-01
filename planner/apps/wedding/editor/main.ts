@@ -1,6 +1,6 @@
 import { copyText, downloadFile, el, field, num, parseLocation, planApi, setStatus } from "@planner/editor-kit";
 import {
-  SEATING_CSS, buildTimeline, seatingGroups, seatingToSvg, solveSeating, verifySeating,
+  SEATING_CSS, TIMELINE_DEFAULTS, buildTimeline, seatingGroups, seatingToSvg, solveSeating, verifySeating,
   type Guest, type Rule, type SeatingReport, type Table, type Timeline, type TimelineInput,
 } from "@planner/engine";
 import { buildGuests, buildRules, buildTables, type RuleInput, type SeatingPlan } from "../src/model.ts";
@@ -220,7 +220,7 @@ const TL_FIELDS: [keyof TimelineInput, string, "time" | "min"][] = [
 ];
 function timelinePanel(): HTMLElement {
   const inputs = TL_FIELDS.map(([k, label, type]) => {
-    const i = el("input", { type: type === "time" ? "time" : "number", min: type === "min" ? 0 : undefined, max: type === "min" ? 360 : undefined, value: String(state.tl[k] ?? ""), placeholder: type === "min" ? "default" : undefined });
+    const i = el("input", { type: type === "time" ? "time" : "number", min: type === "min" ? 0 : undefined, max: type === "min" ? 360 : undefined, value: String(state.tl[k] ?? ""), placeholder: type === "min" ? `default ${(TIMELINE_DEFAULTS as Record<string, number>)[k] ?? ""}` : undefined });
     i.disabled = state.readOnly;
     i.addEventListener("change", () => {
       const t = state.tl as unknown as Record<string, string | number | undefined>;

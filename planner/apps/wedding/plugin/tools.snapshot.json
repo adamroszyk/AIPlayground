@@ -1,0 +1,502 @@
+[
+  {
+    "name": "plan_wedding_seating",
+    "title": "Plan wedding seating",
+    "description": "Builds a wedding seating chart. Given the guest list (with optional groups and parties), the tables, and rules (keep together, keep apart, head table, fixed seat), it seats everyone, keeps parties together and groups close, and then re-checks every rule on the finished chart. Returns who sits at each table, a pass/fail report for each rule, and links to view and edit the chart on the web. If the rules cannot all be met it says which ones conflict and returns the closest chart. Use when the user wants a seating chart or to seat guests around rules. It does not send invitations or book vendors.",
+    "inputSchema": {
+      "type": "object",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "guests": {
+          "minItems": 1,
+          "maxItems": 300,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "description": "The guest's name as it should appear. Every name must be unique; add a last initial if two guests share a first name. First names or initials are enough."
+              },
+              "group": {
+                "description": "A label such as 'Bride's family' or 'College friends'. The planner tries to keep a group at as few tables as possible.",
+                "type": "string",
+                "maxLength": 60
+              },
+              "party": {
+                "description": "Guests with the same party label (a couple, a family with kids) always sit at the same table.",
+                "type": "string",
+                "maxLength": 60
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        "tables": {
+          "minItems": 1,
+          "maxItems": 40,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "Optional table name. Leave out to number tables automatically.",
+                "type": "string",
+                "maxLength": 40
+              },
+              "seats": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 24,
+                "description": "Seats per table."
+              },
+              "count": {
+                "description": "How many identical tables (default 1).",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 40
+              },
+              "head": {
+                "description": "True for the head table, which the 'head_table' rule refers to.",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "seats"
+            ]
+          }
+        },
+        "rules": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "together"
+                  },
+                  "guests": {
+                    "description": "Names that must share a table.",
+                    "minItems": 2,
+                    "maxItems": 12,
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "group": {
+                    "description": "Alternatively, a group label: everyone in it shares a table.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "apart"
+                  },
+                  "a": {
+                    "type": "string"
+                  },
+                  "b": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "a",
+                  "b"
+                ],
+                "description": "These two guests must not share a table."
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "head_table"
+                  },
+                  "guests": {
+                    "minItems": 1,
+                    "maxItems": 24,
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "guests"
+                ],
+                "description": "These guests must sit at the head table."
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "fixed"
+                  },
+                  "guest": {
+                    "type": "string"
+                  },
+                  "table": {
+                    "type": "string",
+                    "description": "The table's name, e.g. 'Table 3'."
+                  }
+                },
+                "required": [
+                  "type",
+                  "guest",
+                  "table"
+                ],
+                "description": "This guest must sit at this table."
+              }
+            ]
+          }
+        },
+        "save": {
+          "default": true,
+          "description": "Save the chart and return links to view and edit it.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "guests",
+        "tables"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "title": "Plan wedding seating"
+    },
+    "_meta": {
+      "ui": {
+        "resourceUri": "ui://aisle/seating.html"
+      },
+      "ui/resourceUri": "ui://aisle/seating.html"
+    }
+  },
+  {
+    "name": "check_wedding_seating",
+    "title": "Check a seating chart",
+    "description": "Checks a seating chart the user already has (or has edited) against their rules without changing it: capacity, everyone seated exactly once, parties together, and every keep-together, keep-apart, head-table and fixed-seat rule. Returns pass/fail with details for each. Use to answer 'does this seating work?' for a specific arrangement.",
+    "inputSchema": {
+      "type": "object",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "guests": {
+          "minItems": 1,
+          "maxItems": 300,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "description": "The guest's name as it should appear. Every name must be unique; add a last initial if two guests share a first name. First names or initials are enough."
+              },
+              "group": {
+                "description": "A label such as 'Bride's family' or 'College friends'. The planner tries to keep a group at as few tables as possible.",
+                "type": "string",
+                "maxLength": 60
+              },
+              "party": {
+                "description": "Guests with the same party label (a couple, a family with kids) always sit at the same table.",
+                "type": "string",
+                "maxLength": 60
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        "tables": {
+          "minItems": 1,
+          "maxItems": 40,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "Optional table name. Leave out to number tables automatically.",
+                "type": "string",
+                "maxLength": 40
+              },
+              "seats": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 24,
+                "description": "Seats per table."
+              },
+              "count": {
+                "description": "How many identical tables (default 1).",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 40
+              },
+              "head": {
+                "description": "True for the head table, which the 'head_table' rule refers to.",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "seats"
+            ]
+          }
+        },
+        "rules": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "together"
+                  },
+                  "guests": {
+                    "description": "Names that must share a table.",
+                    "minItems": 2,
+                    "maxItems": 12,
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "group": {
+                    "description": "Alternatively, a group label: everyone in it shares a table.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "apart"
+                  },
+                  "a": {
+                    "type": "string"
+                  },
+                  "b": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "a",
+                  "b"
+                ],
+                "description": "These two guests must not share a table."
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "head_table"
+                  },
+                  "guests": {
+                    "minItems": 1,
+                    "maxItems": 24,
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "guests"
+                ],
+                "description": "These guests must sit at the head table."
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "fixed"
+                  },
+                  "guest": {
+                    "type": "string"
+                  },
+                  "table": {
+                    "type": "string",
+                    "description": "The table's name, e.g. 'Table 3'."
+                  }
+                },
+                "required": [
+                  "type",
+                  "guest",
+                  "table"
+                ],
+                "description": "This guest must sit at this table."
+              }
+            ]
+          }
+        },
+        "arrangement": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "table": {
+                "type": "string",
+                "description": "Table name, e.g. 'Table 2'."
+              },
+              "guests": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "table",
+              "guests"
+            ]
+          },
+          "description": "Who sits at each table."
+        }
+      },
+      "required": [
+        "guests",
+        "tables",
+        "arrangement"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Check a seating chart"
+    }
+  },
+  {
+    "name": "build_wedding_timeline",
+    "title": "Build a wedding day timeline",
+    "description": "Builds a day-of schedule from the ceremony start time: guest arrival, ceremony, photos, optional travel between venues, cocktail hour, dinner, toasts, first dance, cake and dancing, with buffers between segments. Warns if it runs past a venue curfew or if photos run after sunset. Times are 24-hour HH:MM. Use when the user wants a wedding day schedule. Durations are in minutes and all optional.",
+    "inputSchema": {
+      "type": "object",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "ceremonyStart": {
+          "type": "string",
+          "description": "Ceremony start, 24-hour HH:MM, e.g. 16:00."
+        },
+        "ceremonyMinutes": {
+          "description": "Ceremony length in minutes (default 30).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 240
+        },
+        "guestsArriveMinutesBefore": {
+          "description": "How long before the ceremony guests start arriving (default 30).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 240
+        },
+        "photosMinutes": {
+          "description": "Photo session after the ceremony, in minutes (default 45).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 240
+        },
+        "travelMinutes": {
+          "description": "Travel between ceremony and reception venues; 0 if the same place.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 240
+        },
+        "cocktailMinutes": {
+          "description": "Cocktail hour length in minutes (default 60).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 240
+        },
+        "dinnerMinutes": {
+          "description": "Dinner length in minutes (default 75).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 240
+        },
+        "toastsMinutes": {
+          "description": "Speeches and toasts in minutes (default 20).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 120
+        },
+        "firstDanceMinutes": {
+          "description": "First dance in minutes (default 10).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "cakeMinutes": {
+          "description": "Cake cutting in minutes (default 15).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "danceMinutes": {
+          "description": "Open dancing in minutes (default 120).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 360
+        },
+        "bufferMinutes": {
+          "description": "Slack between segments in minutes (default 10).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "venueCurfew": {
+          "description": "Time the venue must be empty, HH:MM. Earlier than the ceremony means after midnight.",
+          "type": "string"
+        },
+        "sunset": {
+          "description": "Sunset time HH:MM, to flag outdoor photos after dark.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ceremonyStart"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "title": "Build a wedding day timeline"
+    }
+  }
+]
