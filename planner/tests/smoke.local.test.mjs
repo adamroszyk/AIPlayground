@@ -21,7 +21,7 @@ test("smoke passes on roomwise with the challenge token configured", () => {
 test("smoke passes on aisle with no challenge configured", () => {
   const r = run(b.base, "wedding");
   assert.equal(r.status, 0, r.stdout + r.stderr);
-  assert.match(r.stdout, /404 until a token is configured/);
+  assert.match(r.stdout, /challenge route is 404: no verification token is configured yet/);
 });
 test("smoke accepts a configured token when none is passed (secrets survive redeploys), and still checks the value when one is", () => {
   const r = run(a.base, "home");
