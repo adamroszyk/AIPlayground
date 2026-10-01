@@ -109,6 +109,30 @@ Honest assessment: **don't lead with it.**
 
 That is a judgement from the table above, not measured data — if Keyword Planner says otherwise, move it up.
 
+## Update: volume and directory-competition check on the five picks
+
+Run on 2026-10-01 with web search only. **Low-confidence evidence**; absence from a snippet does not prove absence from a directory.
+
+| Pick | Volume figure found (US, monthly) | Already in the ChatGPT directory? |
+|------|-----------------------------------|-----------------------------------|
+| QR code | "950K+" | **Yes**: AnyQR, QRCM (7 content types, branded/tracked codes), QR Code Maker |
+| Word counter | not found | **Yes**: "Word Counter" app (live counts, reading level, top-10 words); also an older ChatGPT plugin, WordCounterGPT |
+| Password | "3.1M+" | Not seen |
+| Age / dates | "5M+" (age calculator) | Not seen; only generic date/calendar apps (Quick Calendar, Timezone Buddy) |
+| Mortgage / loan | "5M+" | Not seen for mortgage; **AutoIQ** covers auto loans/leases |
+
+How far to trust the volumes: they come from a tool-aggregator marketing page, in round "N+" figures, with no methodology. Use them only to
+confirm these are big keywords, not to forecast traffic. Directory snapshots also disagree on size (one source says ~330 apps, another ~1,600),
+so the directory is growing fast or the sources use different definitions.
+Sources: [tool-aggregator listing](https://toolspotai.com/) · [awesome-chatgpt-apps](https://github.com/rdmgator12/awesome-chatgpt-apps) · [QR Code Maker app](https://qr-code-maker.app/qr-code-maker-on-chatgpt) · [WordCounterGPT](https://github.com/ykdojo/WordCounterGPT).
+
+**What this changes:**
+
+- QR and word counter are **already occupied in the ChatGPT directory**. Our QR tool has no tracking/branding/vCard features, so it is the weakest differentiated pick *there*. It is still fine as a web SEO page and as a cheap, working vertical slice.
+- Password, age/date and mortgage/loan looked **open** in what I could see. If we only have time to polish and submit three, make it these.
+- Cheapest way to differentiate QR/word counter: ship the extra types users expect (Wi-Fi, vCard, email, calendar event for QR; reading level for words) before submitting them to a directory.
+- Re-check each directory the day before submitting. Both the volumes and the competition move quickly.
+
 ## Caveats on strategy
 
 - A web tool and a chat app are **two different distribution channels**. SEO wins pages; directory listings win chat
