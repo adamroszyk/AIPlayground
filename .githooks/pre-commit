@@ -1,0 +1,3 @@
+#!/bin/sh
+# Blocks commits that contain credentials. Enabled by `npm ci` (git config core.hooksPath .githooks).
+exec node planner/scripts/check-secrets.mjs --staged

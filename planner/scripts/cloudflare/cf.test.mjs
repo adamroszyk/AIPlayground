@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { resolveSiteUrl, workersSubdomain } from "./cf.mjs";
+import { missingPermissions, resolveSiteUrl, workersSubdomain } from "./cf.mjs";
 
 const reply = (body, status = 200) => async (url, init) => { reply.last = { url, init }; return { status, json: async () => body }; };
 const creds = { CLOUDFLARE_API_TOKEN: "tok", CLOUDFLARE_ACCOUNT_ID: "acc123" };
@@ -22,4 +22,13 @@ test("explains an account with no subdomain, and API errors", async () => {
   await assert.rejects(() => resolveSiteUrl({ envName: "X", workerName: "w", env: creds, fetchImpl: reply({ success: true, result: { subdomain: null } }) }), /no workers.dev subdomain/);
   await assert.rejects(() => workersSubdomain({ token: "t", account: "a", fetchImpl: reply({ success: false, errors: [{ message: "Authentication error" }] }, 403) }), /HTTP 403.*Authentication error/);
   await assert.rejects(() => workersSubdomain({ token: "t", account: "a", fetchImpl: async () => ({ status: 502, json: async () => { throw new Error("html"); } }) }), /non-JSON/);
+});
+
+test("preflight names exactly the permissions the token lacks", async () => {
+  const f = async (url) => ({ status: url.includes("/d1/") ? 403 : 200, json: async () => (url.includes("/d1/") ? { success: false, errors: [{ code: 10000, message: "Authentication error" }] } : { success: true, result: [] }) });
+  assert.deepEqual(await missingPermissions({ token: "t", account: "a", fetchImpl: f }), { missing: ["D1: Edit"], unreachable: [] });
+  const ok = async () => ({ status: 200, json: async () => ({ success: true }) });
+  assert.deepEqual(await missingPermissions({ token: "t", account: "a", fetchImpl: ok }), { missing: [], unreachable: [] });
+  const down = async () => { throw new Error("offline"); };
+  assert.deepEqual((await missingPermissions({ token: "t", account: "a", fetchImpl: down })).missing, [], "a network failure is not reported as a missing permission");
 });

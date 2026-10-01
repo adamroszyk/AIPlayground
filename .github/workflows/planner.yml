@@ -31,6 +31,7 @@ jobs:
           cache: npm
           cache-dependency-path: planner/package-lock.json
       - run: npm ci
+      - run: npm run check:secrets
       - run: npx playwright install --with-deps chromium
       - name: Point the tests at Playwright's Chromium
         run: echo "CHROMIUM=$(node -e "console.log(require('playwright').chromium.executablePath())")" >> "$GITHUB_ENV"

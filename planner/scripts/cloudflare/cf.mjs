@@ -22,3 +22,26 @@ export async function resolveSiteUrl({ envName, workerName, env = process.env, f
   if (!sub) throw new Error("This account has no workers.dev subdomain yet. In the dashboard open Workers & Pages and choose one (it becomes part of the permanent MCP URL), then rerun.");
   return `https://${workerName}.${sub}.workers.dev`;
 }
+
+/**
+ * Checks, before anything is uploaded, that the token can reach the three services a deploy touches.
+ * Returns the names of the permissions that are missing (empty = fine). A network failure is reported separately, never as "missing".
+ */
+export async function missingPermissions({ token, account, fetchImpl = fetch }) {
+  const probes = [
+    ["Workers Scripts: Edit", `/accounts/${account}/workers/scripts`],
+    ["Workers KV Storage: Edit", `/accounts/${account}/storage/kv/namespaces?per_page=1`],
+    ["D1: Edit", `/accounts/${account}/d1/database?per_page=1`],
+  ];
+  const missing = [], unreachable = [];
+  for (const [name, path] of probes) {
+    try {
+      const res = await fetchImpl(`${API}${path}`, { headers: { authorization: `Bearer ${token}` } });
+      let body = {};
+      try { body = await res.json(); } catch { /* non-JSON */ }
+      const denied = res.status === 401 || res.status === 403 || (body.errors ?? []).some((e) => [10000, 9109, 10001].includes(e.code));
+      if (denied) missing.push(name); else if (!res.status || res.status >= 500) unreachable.push(name);
+    } catch { unreachable.push(name); }
+  }
+  return { missing, unreachable };
+}

@@ -104,3 +104,13 @@ ENV/
 toolbox/node_modules/
 toolbox/dist/
 .env
+
+# secrets: never commit these
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+*.token
+*.pem
+secrets/
+planner/wrangler.deploy.json

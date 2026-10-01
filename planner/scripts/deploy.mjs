@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import { COST_MODEL, limitsFromEnv } from "../packages/core/src/usage.ts";
-import { resolveSiteUrl } from "./cloudflare/cf.mjs";
+import { missingPermissions, resolveSiteUrl } from "./cloudflare/cf.mjs";
 
 const [app, ...flags] = process.argv.slice(2);
 const dry = flags.includes("--dry-run"), skipSmoke = flags.includes("--skip-smoke");
@@ -35,6 +35,16 @@ const sh = (cmd, args, opt = {}) => {
   const r = spawnSync(cmd, args, { stdio: opt.input ? ["pipe", "inherit", "inherit"] : "inherit", encoding: "utf8", cwd: opt.cwd ?? dir, input: opt.input, env: { ...process.env, ...opt.env } });
   if (r.status !== 0) { console.error(`\nFailed: ${cmd} ${args.join(" ")} (exit ${r.status})`); process.exit(r.status ?? 1); }
 };
+
+// 0. fail early, with the fix, if the token cannot do what a deploy needs (instead of failing halfway through an upload)
+if (!dry) {
+  const { missing, unreachable } = await missingPermissions({ token: process.env.CLOUDFLARE_API_TOKEN, account: process.env.CLOUDFLARE_ACCOUNT_ID });
+  if (missing.length) {
+    console.error(`\nYour API token is missing: ${missing.join(", ")}.\nCreate a new token (Account API tokens > Create Token > Start from scratch) with these Account permissions: Workers Scripts: Edit, Workers KV Storage: Edit, D1: Edit, Account Settings: Read. Then run again; nothing was uploaded.`);
+    process.exit(1);
+  }
+  if (unreachable.length) console.warn(`Could not check these permissions (network): ${unreachable.join(", ")}. Continuing.`);
+}
 
 // 1. build with the real hostname and publisher name baked into canonical URLs and legal pages
 sh("npm", ["run", "build", "-w", P.pkg], { cwd: fileURLToPath(new URL("..", import.meta.url)), env: { SITE_URL: siteUrl || "https://placeholder.example.com", PUBLISHER_NAME: process.env.PUBLISHER_NAME ?? "", CONTACT_EMAIL: process.env.CONTACT_EMAIL ?? "" } });
