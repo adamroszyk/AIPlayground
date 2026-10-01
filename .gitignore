@@ -99,3 +99,8 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# toolbox
+toolbox/node_modules/
+toolbox/dist/
+.env
